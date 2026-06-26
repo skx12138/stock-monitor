@@ -351,7 +351,34 @@ def main():
                             pl = pk["low"].values.astype(float) if "low" in pk.columns else pc
                             p_pred = predict_tomorrow(pc, ph, pl, pv, pc[-1])
                             icon = {"看涨": "\U0001f4c8", "看跌": "\U0001f4c9", "震荡": "\u2796"}.get(p_pred["direction"], "")
+                            # K线形态分析
+                            kline_reason = p_pred.get("reason", "")
+                            # 近5日趋势
+                            if len(pc) >= 5:
+                                chg_5d = (pc[-1] / pc[-5] - 1) * 100
+                                trend_5d = f"5日{chg_5d:+.1f}%"
+                            else:
+                                trend_5d = ""
+                            # 均线位置
+                            from src.signals import _sma
+                            ma5_v = _sma(pc, 5); ma20_v = _sma(pc, 20)
+                            ma_valid = ~np.isnan(ma5_v) & ~np.isnan(ma20_v)
+                            ma_pos = ""
+                            if len(ma5_v[ma_valid]) > 0:
+                                m5 = ma5_v[ma_valid][-1]; m20 = ma20_v[ma_valid][-1]
+                                ma_pos = "↑多头" if m5 > m20 else "↓空头"
+                            # 成交量
+                            vol_trend = ""
+                            if len(pv) >= 5:
+                                avg_v = np.mean(pv[-5:])
+                                if avg_v > 0:
+                                    vr = pv[-1] / avg_v
+                                    vol_trend = f"量{vr:.1f}"
+                            # 精简显示
+                            extra = " | ".join(filter(None, [kline_reason[:15], trend_5d, ma_pos, vol_trend]))
                             pre_lines.append(f"  {icon} {p_name}({p_code}): {p_pred['direction']}({p_pred['confidence']}%)")
+                            if extra:
+                                pre_lines.append(f"     {extra}")
                             if p_pred["direction"] == "看涨": bullish += 1
                             elif p_pred["direction"] == "看跌": bearish += 1
                             else: neutral += 1
