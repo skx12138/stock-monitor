@@ -170,22 +170,29 @@ SIGNAL_NAMES_CN = {
 
 
 def notify_startup(config: dict) -> bool:
-    """推送启动通知"""
+    """推送启动通知（含所有监控股票实时行情）"""
     stocks = config.get("stocks", {})
-    stock_display = config.get("_stock_list_display", None)
     signals_enabled = []
     signals_cfg = config.get("signals", {})
     for name, cfg in signals_cfg.items():
         if isinstance(cfg, dict) and cfg.get("enabled"):
             signals_enabled.append(SIGNAL_NAMES_CN.get(name, name))
 
+    # 获取所有监控股票实时行情
     stock_lines = []
-    if stock_display:
-        for s in stock_display:
-            stock_lines.append(f"  · {s}")
-    else:
-        for code, name in stocks.items():
-            stock_lines.append(f"  · {name or code}")
+    for code, name in stocks.items():
+        try:
+            from src.fetcher import fetch_realtime
+            rt = fetch_realtime(code)
+            if rt:
+                price = rt.get("price", 0)
+                chg = rt.get("change_pct", 0)
+                icon = "📈" if chg >= 0 else "📉"
+                stock_lines.append(f"  {icon} {name or code}({code}) {price:.2f} {chg:+.2f}%")
+            else:
+                stock_lines.append(f"  · {name or code}({code})")
+        except:
+            stock_lines.append(f"  · {name or code}({code})")
 
     # 回测表现
     backtest_summary = config.get("_backtest_summary", [])

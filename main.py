@@ -225,6 +225,7 @@ def main():
     dip_buy_done_today = False
     close_buy_done_today = False  # 尾盘买入是否已完成
     pred_done_today = False      # 明日预测是否已推送
+    startup_done = False         # 启动通知是否已推送
     summary_done_today = False   # 盘后总结是否已发
     today_signals = []           # 今日信号记录
     cycle_count = 0
@@ -279,9 +280,7 @@ def main():
     config["_stock_list_display"] = startup_stocks
     config["_backtest_summary"] = backtest_lines
     config["_paper_report"] = paper.generate_report()
-    # 交易日首次启动时推送通知（避免非交易时段重复推送）
-    if is_trading_time():
-        notify_startup(config)
+    # 启动通知改为9:30在循环中触发
 
     # 配置文件监控（支持热加载）
     config_mtime = os.path.getmtime("config.yaml")
@@ -317,6 +316,12 @@ def main():
 
         if is_trading_time():
             now_time = now.time()
+
+            # ── 启动通知（9:30，每天一次） ──
+            if not startup_done and now_time >= dt_time(9, 30) and now_time <= dt_time(9, 35):
+                startup_done = True
+                logger.info("推送启动通知...")
+                notify_startup(config)
 
             # ── 尾盘低吸扫描（14:30-15:00，每天一次） ──
             if (
