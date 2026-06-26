@@ -364,10 +364,9 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
             lines.append("大盘跌幅较大(-1.5%+)，系统性风险偏高，不建议操作")
         elif "市场偏弱" in market_info:
             lines.append("大盘走势偏弱，个股机会有限，建议观望")
-        elif "数据" in market_info:
-            lines.append(f"📡 {market_info}")
         else:
             lines.append("当前没有同时满足涨幅1%~5%、多头趋势、RSI 40~65、量比>0.7的个股")
+            lines.append("(大盘环境正常，但个股未达标)")
         lines.append("")
         # 总是列出全市场股票评分
         lines.append("")
