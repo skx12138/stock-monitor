@@ -310,7 +310,7 @@ def scan_close_buy_candidates(max_price: float = 0, tech_only: bool = False) -> 
         if rsi_val:
             if rsi_val > 65:
                 continue  # 超买不追
-            if rsi_val < 45:
+            if rsi_val < 40:
                 continue  # 弱势不碰（杂毛）
 
         # 成交量检查（缩量没底气，淘汰）
@@ -371,7 +371,7 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
         lines.append("💡 明日开盘后重新评估")
         return "\n".join(lines)
 
-    lines.append(f"选股标准：涨幅1%~5%、多头排列、RSI适中、量比>0.7")
+    lines.append(f"选股标准：涨幅1%~5%、多头排列、RSI适中(40~65)、量比>0.7")
     lines.append(f"符合条件: {len(candidates)} 只（涨势较好的标的）")
     # 加入明日预判
     for c in candidates[:6]:
