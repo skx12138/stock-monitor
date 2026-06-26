@@ -409,12 +409,14 @@ def main():
                     if sell_action:
                         notify(config, "🔄 尾盘卖出", f"尾盘卖出 {pos.stock_name}({pcode}) {sell_price:.2f}元")
 
-                # ── 明日预测汇总（14:50-15:00，收盘前10分钟推送） ──
-                if not pred_done_today:
-                    pred_done_today = True
+                # ── 明日预测汇总（14:50-15:00，每分钟推送一次） ──
+                pred_key = f"pred_{now.strftime('%H%M')}"
+                if dt_time(14, 50) <= now_time <= dt_time(15, 0) and pred_key not in intraday_alerts:
+                    intraday_alerts.add(pred_key)
                     try:
                         from src.predictor import predict_tomorrow
                         pred_lines = ["🔮 **明日预测汇总**", ""]
+                        bullish = bearish = neutral = 0
                         for p_code, p_name in stocks.items():
                             pk = fetch_kline(p_code, 60)
                             if pk is not None and len(pk) > 20:
@@ -425,7 +427,15 @@ def main():
                                 p_pred = predict_tomorrow(pc, ph, pl, pv, pc[-1])
                                 icon = {"看涨": "📈", "看跌": "📉", "震荡": "➖"}.get(p_pred["direction"], "❓")
                                 pred_lines.append(f"  {icon} {p_name}({p_code}): {p_pred['direction']}({p_pred['confidence']}%)")
-                        if len(pred_lines) > 1:
+                                if p_pred["direction"] == "看涨": bullish += 1
+                                elif p_pred["direction"] == "看跌": bearish += 1
+                                else: neutral += 1
+                        if bullish + bearish + neutral > 0:
+                            total = bullish + bearish + neutral
+                            trend_icon = "📈" if bullish >= bearish else "📉"
+                            trend_text = f"{trend_icon} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只"
+                            pred_lines.insert(1, trend_text)
+                        if len(pred_lines) > 2:
                             notify(config, "🔮 明日预测", "\n".join(pred_lines))
                     except Exception as e:
                         logger.debug("明日预测推送失败: %s", e)
