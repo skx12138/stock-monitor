@@ -324,7 +324,9 @@ class PaperTrading:
                         logger.info("日K线趋势向下，%s 跳过买入", name)
                         ratio = 0
                 if ratio > 0:
-                    trade = self._buy_position(code, name, current_price, ratio, f"评分{score}分·买{ratio*100:.0f}%")
+                    trade = self._buy_position(code, name, current_price, ratio, 
+                        f"评分{score}分买入{ratio*100:.0f}%仓位·{prediction['direction'] if prediction else '无预测'}·大盘{'跌' if market_declining else '稳'}",
+                        add_count=0)
             elif ratio > 0 and code in self.portfolio.positions and score >= 65:
                 pos = self.portfolio.positions.get(code)
                 if pos and pos.profit_pct > 0:  # 盈利中才加仓
@@ -448,7 +450,7 @@ class PaperTrading:
                                     add_skip = True
                             if not add_skip:
                                 trade = self._buy_position(code, name, current_price, ratio,
-                                    f"摊平{loss:.0f}%·补仓", add_count=pos.add_count + 1)
+                                    f"亏损{loss:.0f}%摊平补仓·评分{score}·预测{prediction['direction'] if prediction else '无'}", add_count=pos.add_count + 1)
 
         # ── 卖出（评分<40 或 自适应止损）— T+1限制 ──
         if not trade and code in self.portfolio.positions:
@@ -466,9 +468,9 @@ class PaperTrading:
                     if sell_shares >= 100:
                         trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}分·减半")
                     else:
-                        trade = self._sell_position(code, current_price, f"评分{score}分·回避")
+                        trade = self._sell_position(code, current_price, f"评分{score}分卖出回避·{prediction['direction'] if prediction else '无预测'}·大盘{'跌' if market_declining else '稳'}")
                 else:
-                    trade = self._sell_position(code, current_price, f"评分{score}分·回避")
+                    trade = self._sell_position(code, current_price, f"评分{score}分卖出回避·{prediction['direction'] if prediction else '无预测'}·大盘{'跌' if market_declining else '稳'}")
             else:
                 # 自适应止损（基于ATR）
                 atr_value = score_info.get("atr", 0)
