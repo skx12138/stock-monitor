@@ -1,6 +1,6 @@
 {
   "cash": 82767.122835,
-  "total_value": 100467.12,
+  "total_value": 100447.12,
   "positions": {
     "515880": {
       "stock_code": "515880",
@@ -8,11 +8,11 @@
       "buy_date": "2026-06-24",
       "buy_price": 1.84,
       "shares": 10000,
-      "current_price": 1.77,
+      "current_price": 1.768,
       "total_cost": 18422.726277,
-      "market_value": 17700.0,
-      "profit_pct": -3.8,
-      "profit_amount": -722.73,
+      "market_value": 17680.0,
+      "profit_pct": -3.91,
+      "profit_amount": -742.73,
       "peak_price": 1.862,
       "add_count": 1
     }
@@ -423,7 +423,7 @@
     },
     {
       "date": "2026-06-26",
-      "value": 100467.12
+      "value": 100447.12
     }
   ]
 }
