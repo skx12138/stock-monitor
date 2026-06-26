@@ -276,6 +276,21 @@ class PaperTrading:
         intraday_chg = score_info.get("change_pct", 0)
         deep_drop = intraday_chg < -5  # 当日跌超5%视为深跌机会
 
+        # ── 多周期确认：日K线均线多头才买入（减少假信号） ──
+        daily_bullish = True
+        try:
+            from src.fetcher import fetch_kline as _fk
+            dk = _fk(code, 365)
+            if dk is not None and len(dk) > 20:
+                dc = dk["close"].values.astype(float)
+                dma5 = _sma(dc, 5)
+                dma20 = _sma(dc, 20)
+                dv = ~np.isnan(dma5) & ~np.isnan(dma20)
+                if len(dma5[dv]) > 0:
+                    daily_bullish = dma5[dv][-1] > dma20[dv][-1]
+        except:
+            pass
+
         # ── 跌停处理（跌停+预测看涨=抄底，跌停+预测看跌=卖出） ──
         limit_down = intraday_chg <= -9.5  # 接近跌停
         if limit_down and prediction:
@@ -303,6 +318,11 @@ class PaperTrading:
                         logger.info("大盘跌势+深跌反弹机会(%.1f%%)，半仓买入 %s", intraday_chg, name)
                     else:
                         ratio = 0  # 无看涨预测则跳过
+                if ratio > 0:
+                    # 日K线多头检查（减少假信号）
+                    if not daily_bullish and not deep_drop and not limit_down:
+                        logger.info("日K线趋势向下，%s 跳过买入", name)
+                        ratio = 0
                 if ratio > 0:
                     trade = self._buy_position(code, name, current_price, ratio, f"评分{score}分·买{ratio*100:.0f}%")
             elif ratio > 0 and code in self.portfolio.positions and score >= 65:
@@ -343,6 +363,10 @@ class PaperTrading:
                                     if not macd_ok and not vol_ok and score_margin < 10:
                                         logger.info("无量价共振(评分仅超门槛%s)，跳过 %s 第%s次加仓", score_margin, name, idx + 1)
                                         add_skip = True
+                                    # 日K线向下时加仓需谨慎
+                                    if not daily_bullish and not add_skip:
+                                        logger.info("日K线趋势向下，%s 第%s次加仓减半", name, idx + 1)
+                                        add_ratios[idx] *= 0.5
                                 if not add_skip:
                                     add_ratio = add_ratios[idx]
                                     trade = self._buy_position(code, name, current_price, add_ratio,
