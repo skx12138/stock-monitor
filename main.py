@@ -263,7 +263,7 @@ def main():
     logger.info("轮询间隔: %d 秒", interval)
     logger.info("=" * 50)
 
-    # 启动通知加上板块和回测
+    # 启动通知加上板块和回测（只在交易时段推送）
     startup_stocks = []
     backtest_lines = []
     for code, name in stocks.items():
@@ -279,7 +279,9 @@ def main():
     config["_stock_list_display"] = startup_stocks
     config["_backtest_summary"] = backtest_lines
     config["_paper_report"] = paper.generate_report()
-    notify_startup(config)
+    # 交易日首次启动时推送通知（避免非交易时段重复推送）
+    if is_trading_time():
+        notify_startup(config)
 
     # 配置文件监控（支持热加载）
     config_mtime = os.path.getmtime("config.yaml")
@@ -533,7 +535,7 @@ def main():
                     if prev:
                         prev_price, _ = prev
                         price_chg_pct = abs(price - prev_price) / max(prev_price, 0.01) * 100
-                        if price_chg_pct > 1.5:
+                        if price_chg_pct > 2.5:
                             # 找到这只股票对应的快照行
                             for snap in stock_snapshots:
                                 if f"({code})" in snap:
@@ -746,8 +748,11 @@ def main():
                         merged_lines.append(m)
                 notify(config, "📊 盘中快报", "\n".join(merged_lines))
             elif signal_msgs:
-                # 无交易/异动时，单独推送信号播报
-                notify(config, "📡 信号播报", "\n".join(signal_msgs))
+                # 无交易/异动时，每30分钟推送一次信号播报
+                sig_key = f"sig_{now.strftime('%Y%m%d_%H')}_{now.hour * 2 + now.minute // 30}"
+                if sig_key not in intraday_alerts:
+                    intraday_alerts.add(sig_key)
+                    notify(config, "📡 信号播报", "\n".join(signal_msgs))
 
             # ── 盘后总结（15:00，每天一次） ──
             if not summary_done_today and now_time >= dt_time(15, 0) and now_time <= dt_time(15, 1):
