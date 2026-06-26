@@ -364,12 +364,47 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
             lines.append("大盘跌幅较大(-1.5%+)，系统性风险偏高，不建议操作")
         elif "市场偏弱" in market_info:
             lines.append("大盘走势偏弱，个股机会有限，建议观望")
-        else:
-            lines.append("当前没有同时满足涨幅1%~5%、多头趋势、RSI 40~65、量比>0.7的个股")
-            lines.append("(大盘环境正常，但个股未达标)")
+        lines.append("当前没有同时满足涨幅1%~5%、多头趋势、RSI 40~65、量比>0.7的个股")
         lines.append("")
-        # 总是列出全市场股票评分
+        # 监控股票分析
+        lines.append(f"**📋 监控股票分析**")
         lines.append("")
+        try:
+            import yaml
+            cfg = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
+            monitor_stocks = cfg.get("stocks", {})
+            from src.papertrade import PaperTrading
+            pt = PaperTrading()
+            for m_code, m_name in monitor_stocks.items():
+                rt = fetch_realtime(m_code)
+                if not rt: continue
+                mp = rt.get("price", 0)
+                mc = rt.get("change_pct", 0)
+                mk = fetch_kline(m_code, days=65)
+                if mk is None or len(mk) < 25: continue
+                m_closes = mk["close"].values.astype(float)
+                m_volumes = mk["volume"].values.astype(float)
+                m_ff = fetch_fund_flow(m_code)
+                from src.scoring import compute_score
+                mi = compute_score(m_closes, m_volumes, mp, m_ff)
+                ms = mi.get("score", 0)
+                m_rsi_v = _calc_rsi(m_closes, 14)
+                m_rsi_s = f"RSI{m_rsi_v:.0f}" if m_rsi_v else "RSI?"
+                m_ma5 = _sma(m_closes, 5); m_ma20 = _sma(m_closes, 20)
+                m_v = ~np.isnan(m_ma5) & ~np.isnan(m_ma20)
+                m_t = "↑" if (len(m_ma5[m_v]) > 0 and m_ma5[m_v][-1] > m_ma20[m_v][-1]) else "↓"
+                m_pos = "🟢" if m_code in pt.portfolio.positions else ""
+                m_vol = np.mean(m_volumes[-5:]) if len(m_volumes) >= 5 else 0
+                m_vr = m_volumes[-1] / m_vol if m_vol > 0 else 0
+                chk_chg = "✅" if 1 <= mc <= 5 else "❌"
+                chk_rsi = "✅" if m_rsi_v and 40 <= m_rsi_v <= 65 else "❌"
+                chk_vol = "✅" if m_vr >= 0.7 else "❌"
+                chk_trend = "✅" if "↑" in m_t else "❌"
+                lines.append(f"  {m_pos}{m_t} {m_name}({m_code}) {mc:+.1f}% 评分{ms} {m_rsi_s}")
+                lines.append(f"     涨幅{chk_chg} RSI{chk_rsi} 量比{chk_vol} 趋势{chk_trend}")
+        except: pass
+        lines.append("")
+        # 全市场扫描
         lines.append(f"**📊 全市场扫描**")
         lines.append("")
         pool = {k: v for k, v in QUALITY_POOL.items() if not tech_only or k in TECH_STOCKS}
