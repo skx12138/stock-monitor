@@ -760,7 +760,7 @@ def main():
                     notify(config, "📡 信号播报", "\n".join(signal_msgs))
 
             # ── 盘后总结（15:00，每天一次） ──
-            if not summary_done_today and now_time >= dt_time(15, 0) and now_time <= dt_time(15, 1):
+            if not summary_done_today and now_time >= dt_time(15, 0):
                 summary_done_today = True
                 logger.info("生成盘后总结...")
                 summary = _generate_summary(config, today_signals, paper)
@@ -841,8 +841,10 @@ def main():
         else:
             logger.debug("非交易时间，跳过")
 
-        # 15:00后自动退出
-        if summary_done_today and now_time >= dt_time(15, 0):
+        # 15:00后自动退出（不管盘后总结是否已执行）
+        if now_time >= dt_time(15, 0):
+            if not summary_done_today:
+                summary_done_today = True
             logger.info("15:00 收盘，监控停止")
             break
 
