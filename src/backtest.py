@@ -56,11 +56,11 @@ class BacktestResult:
 def backtest_ma_crossover(
     code: str, name: str,
     df: pd.DataFrame,
-    ma_short: int = 5,
-    ma_long: int = 20,
+    ma_short: int = 10,
+    ma_long: int = 40,
     initial_cash: float = 100000,
-    rsi_filter: bool = False,       # 金叉时RSI需>50才买入
-    stop_loss_pct: float = 0,       # 止损百分比，0=不设止损
+    rsi_filter: bool = True,       # 金叉时RSI需>50才买入
+    stop_loss_pct: float = 8,       # 止损百分比，0=不设止损
 ) -> BacktestResult:
     """均线金叉/死叉回测（带可选的RSI过滤和止损）
 
