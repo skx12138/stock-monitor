@@ -21,20 +21,15 @@ jobs:
           python-version: '3.12'
 
       - name: 安装依赖
-        run: |
-          cd stock-monitor
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: 运行机器人
-        run: |
-          cd stock-monitor
-          python run.py
+        run: python run.py
         env:
           WECOM_WEBHOOK: ${{ secrets.WECOM_WEBHOOK }}
 
       - name: 保存交易数据
         run: |
-          cd stock-monitor
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add papertrade_data.json -f
