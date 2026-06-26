@@ -401,17 +401,9 @@ class PaperTrading:
                             if len(ma5_v[valid]) > 0 and ma5_v[valid][-1] > ma20_v[valid][-1]:
                                 if not (prediction and prediction["direction"] == "看跌"):
                                     logger.info("RSI超卖加仓: %s RSI=%.0f 评分=%s", name, rsi_val, score)
-                                    trade = self._buy_position(code, name, current_price, 0.15,
+                                    trade = self._buy_position(code, name, current_price, 0.08,
                                         f"RSI超卖加仓·评分{score}", add_count=pos.add_count + 1)
 
-                # ── 大盘共振加仓：大盘强势+个股评分↑+预测看涨（仅预测看涨时触发） ──
-                if not trade and pos and pos.profit_pct > 0 and pos.add_count < 3:
-                    if score >= 60 and not market_declining:
-                        if prediction and prediction["direction"] == "看涨" and prediction["confidence"] >= 60:
-                            logger.info("大盘共振加仓: %s 大盘强势 预测%s(%d%%) 评分=%s",
-                                        name, prediction["direction"], prediction["confidence"], score)
-                            trade = self._buy_position(code, name, current_price, 0.10,
-                                f"大盘共振加仓·评分{score}", add_count=pos.add_count + 1)
                 # 亏损中摊平：亏损>5%且评分仍>=50时，低仓位补仓
                 elif pos and pos.profit_pct < -5 and score >= 50:
                     loss = abs(pos.profit_pct)
