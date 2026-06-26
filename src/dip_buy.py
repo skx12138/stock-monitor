@@ -371,8 +371,8 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
         lines.append("💡 明日开盘后重新评估")
         return "\n".join(lines)
 
-    lines.append(f"选股标准：今日涨幅0.5%~5%、多头趋势、RSI适中、评分≥50")
-    lines.append(f"符合条件: {len(candidates)} 只")
+    lines.append(f"选股标准：涨幅1%~5%、多头排列、RSI适中、量比>0.7")
+    lines.append(f"符合条件: {len(candidates)} 只（涨势较好的标的）")
     # 加入明日预判
     for c in candidates[:6]:
         k_pred = fetch_kline(c["code"], 60)
@@ -389,23 +389,31 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
                 c["pred_dir"] = pred["direction"]
                 c["pred_reason"] = pred["reason"]
                 c["pred_target_label"] = pred.get("target_label", "明日")
+                c["pred_conf"] = pred.get("confidence", 0)
             except:
                 c["pred_dir"] = "?"
                 c["pred_reason"] = ""
                 c["pred_target_label"] = "明日"
+                c["pred_conf"] = 0
         else:
             c["pred_dir"] = "?"
             c["pred_reason"] = ""
             c["pred_target_label"] = "明日"
+            c["pred_conf"] = 0
     lines.append(f"**🏆 尾盘关注名单**")
     lines.append("")
     for i, c in enumerate(candidates[:6], 1):
         pred_icon = {"看涨": "📈", "看跌": "📉", "震荡": "➖"}.get(c.get("pred_dir", ""), "")
         pred_text = f"  🔮{c.get('pred_target_label','明日')}{pred_icon}{c.get('pred_dir','?')}" if c.get("pred_dir") else ""
+        # 评分星级显示
+        score = c.get("score", 0)
+        rsi = c.get("rsi", 0)
+        vol = c.get("vol_ratio", 0)
+        trend = c.get("trend", "")
         lines.append(
             f"{i}. {c['action']}  {c['name']}({c['code']}){get_sector_tag(c['code'])}  {c['price']:.2f}元{pred_text}"
         )
-        lines.append(f"   评分{c['score']} · {c['reason']}")
+        lines.append(f"   评分{score} · {trend} · RSI{rsi if rsi else '?'} · 量比{vol}")
         if c.get("pred_reason"):
             label = c.get("pred_target_label", "明日")
             lines.append(f"   🔮 {label}预判: {c['pred_reason']}")

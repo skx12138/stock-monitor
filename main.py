@@ -371,6 +371,30 @@ def main():
                                 f"尾盘买入·{pred.get('target_label','明日')}{pred['direction'] if k_pred is not None else ''}评分{c['score']}", add_count=0)
                             if buy_trade:
                                 notify(config, "🔄 尾盘买入", f"尾盘买入 {c['name']}({c['code']}) {price:.2f}元")
+                # 尾盘加仓：已持仓的股票也符合条件时，加仓10%
+                for c in close_candidates[:6]:
+                    if c["code"] in paper.portfolio.positions and c["score"] >= 50:
+                        pos = paper.portfolio.positions.get(c["code"])
+                        if pos and pos.add_count < 3 and pos.profit_pct > 0:
+                            rt_trade = fetch_realtime(c["code"])
+                            price = rt_trade["price"] if rt_trade else c["price"]
+                            k_pred = fetch_kline(c["code"], 60)
+                            if k_pred is not None and "high" in k_pred.columns:
+                                from src.predictor import predict_tomorrow
+                                pred = predict_tomorrow(
+                                    k_pred["close"].values.astype(float),
+                                    k_pred["high"].values.astype(float),
+                                    k_pred["low"].values.astype(float),
+                                    k_pred["volume"].values.astype(float) if "volume" in k_pred.columns else np.array([]),
+                                    price,
+                                )
+                                if pred["direction"] != "看跌":
+                                    add_trade = paper._buy_position(c["code"], c["name"], price, 0.10,
+                                        f"尾盘加仓·评分{c['score']}", add_count=pos.add_count + 1)
+                                    if add_trade:
+                                        notify(config, "🔄 尾盘加仓", f"尾盘加仓 {c['name']}({c['code']}) {price:.2f}元")
+                            if buy_trade:
+                                notify(config, "🔄 尾盘买入", f"尾盘买入 {c['name']}({c['code']}) {price:.2f}元")
                 # 尾盘卖出：评分<40的持仓清掉，盈利>8%的止盈
                 for pcode in list(paper.portfolio.positions.keys()):
                     pos = paper.portfolio.positions.get(pcode)
