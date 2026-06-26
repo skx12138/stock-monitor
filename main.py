@@ -225,6 +225,7 @@ def main():
     dip_buy_done_today = False
     close_buy_done_today = False  # 尾盘买入是否已完成
     pred_done_today = False      # 明日预测是否已推送
+    premarket_done = False       # 开盘前分析是否已推送
     startup_done = False         # 启动通知是否已推送
     summary_done_today = False   # 盘后总结是否已发
     today_signals = []           # 今日信号记录
@@ -322,6 +323,51 @@ def main():
                 startup_done = True
                 logger.info("推送启动通知...")
                 notify_startup(config)
+
+            # ── 开盘前分析（9:20-9:30，每天一次） ──
+            if not premarket_done and now_time >= dt_time(9, 20) and now_time <= dt_time(9, 30):
+                premarket_done = True
+                logger.info("生成开盘前分析...")
+                try:
+                    from src.predictor import predict_tomorrow
+                    import numpy as np
+                    pre_lines = ["\U0001f305 **开盘前分析**", ""]
+                    # 大盘
+                    try:
+                        sh = fetch_market_index("000001")
+                        if sh:
+                            icon = "\U0001f4c8" if sh["change_pct"] >= 0 else "\U0001f4c9"
+                            pre_lines.append(f"{icon} 大盘: {sh['name']} {sh['price']} {sh['change_pct']:+.2f}%")
+                            pre_lines.append("")
+                    except: pass
+                    # 个股明日预测+评分
+                    bullish = bearish = neutral = 0
+                    for p_code, p_name in stocks.items():
+                        pk = fetch_kline(p_code, 60)
+                        if pk is not None and len(pk) > 20:
+                            pc = pk["close"].values.astype(float)
+                            pv = pk["volume"].values.astype(float) if "volume" in pk.columns else np.array([])
+                            ph = pk["high"].values.astype(float) if "high" in pk.columns else pc
+                            pl = pk["low"].values.astype(float) if "low" in pk.columns else pc
+                            p_pred = predict_tomorrow(pc, ph, pl, pv, pc[-1])
+                            icon = {"看涨": "\U0001f4c8", "看跌": "\U0001f4c9", "震荡": "\u2796"}.get(p_pred["direction"], "")
+                            pre_lines.append(f"  {icon} {p_name}({p_code}): {p_pred['direction']}({p_pred['confidence']}%)")
+                            if p_pred["direction"] == "看涨": bullish += 1
+                            elif p_pred["direction"] == "看跌": bearish += 1
+                            else: neutral += 1
+                    if bullish + bearish + neutral > 0:
+                        t = bullish + bearish + neutral
+                        ti = "\U0001f4c8" if bullish >= bearish else "\U0001f4c9"
+                        pre_lines.insert(1, f"{ti} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只")
+                    # 推荐关注
+                    pre_lines.append("")
+                    pre_lines.append("\U0001f4a1 **今日关注**")
+                    pre_lines.append("  \u2022 评分\u226545+预测看涨可买入")
+                    pre_lines.append("  \u2022 已持仓评分<35需卖出")
+                    pre_lines.append("  \u2022 9:30开盘后自动监控")
+                    notify(config, "\U0001f305 开盘前分析", "\n".join(pre_lines))
+                except Exception as e:
+                    logger.debug("开盘前分析失败: %s", e)
 
             # ── 尾盘低吸扫描（14:30-15:00，每天一次） ──
             if (
@@ -421,6 +467,7 @@ def main():
                 if dt_time(14, 50) <= now_time <= dt_time(15, 0) and pred_key not in intraday_alerts:
                     intraday_alerts.add(pred_key)
                     try:
+                        from src.fetcher import fetch_market_index
                         from src.predictor import predict_tomorrow
                         pred_lines = ["🔮 **明日预测汇总**", ""]
                         bullish = bearish = neutral = 0
