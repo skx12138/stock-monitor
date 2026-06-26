@@ -359,6 +359,39 @@ def main():
                         t = bullish + bearish + neutral
                         ti = "\U0001f4c8" if bullish >= bearish else "\U0001f4c9"
                         pre_lines.insert(1, f"{ti} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只")
+                    # ── 开盘前自动交易（基于昨日收盘数据） ──
+                    trade_lines = []
+                    for t_code, t_name in stocks.items():
+                        rt = fetch_realtime(t_code)
+                        if not rt: continue
+                        t_price = rt.get("price", 0)
+                        t_kline = fetch_kline(t_code, 60)
+                        if t_kline is None or len(t_kline) < 25: continue
+                        t_closes = t_kline["close"].values.astype(float)
+                        t_volumes = t_kline["volume"].values.astype(float) if "volume" in t_kline.columns else np.array([])
+                        t_ff = fetch_fund_flow(t_code)
+                        from src.scoring import compute_score
+                        t_si = compute_score(t_closes, t_volumes, t_price, t_ff, code=t_code)
+                        t_score = t_si.get("score", 0)
+                        # 预测
+                        t_pred = predict_tomorrow(t_closes, t_closes, t_closes, t_volumes, t_price)
+                        t_has = t_code in paper.portfolio.positions
+                        if not t_has and t_score >= 45 and t_pred["direction"] == "看涨":
+                            buy_t = paper._buy_position(t_code, t_name, t_price, 0.20,
+                                f"开盘买入·评分{t_score}·预测{t_pred['direction']}", add_count=0)
+                            if buy_t:
+                                trade_lines.append(f"  \U0001f7e2 买入 {t_name}({t_code}) {t_price:.2f}元")
+                        elif t_has and (t_score < 35 or t_pred["direction"] == "看跌"):
+                            pos = paper.portfolio.positions.get(t_code)
+                            if pos and pos.buy_date != date.today().isoformat():
+                                sell_t = paper._sell_position(t_code, t_price,
+                                    f"开盘卖出·评分{t_score}·预测{t_pred['direction']}")
+                                if sell_t:
+                                    trade_lines.append(f"  \U0001f534 卖出 {t_name}({t_code}) {t_price:.2f}元")
+                    if trade_lines:
+                        pre_lines.append("")
+                        pre_lines.append("\U0001f504 **开盘自动交易**")
+                        pre_lines.extend(trade_lines)
                     # 推荐关注
                     pre_lines.append("")
                     pre_lines.append("\U0001f4a1 **今日关注**")
