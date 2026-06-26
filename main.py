@@ -329,8 +329,8 @@ def main():
                 premarket_done = True
                 logger.info("生成开盘前分析...")
                 try:
+                    from src.fetcher import fetch_market_index
                     from src.predictor import predict_tomorrow
-                    import numpy as np
                     pre_lines = ["\U0001f305 **开盘前分析**", ""]
                     # 大盘
                     try:
@@ -361,6 +361,7 @@ def main():
                         pre_lines.insert(1, f"{ti} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只")
                     # ── 开盘前自动交易（基于昨日收盘数据） ──
                     trade_lines = []
+                    from src.scoring import compute_score
                     for t_code, t_name in stocks.items():
                         rt = fetch_realtime(t_code)
                         if not rt: continue
@@ -370,11 +371,12 @@ def main():
                         t_closes = t_kline["close"].values.astype(float)
                         t_volumes = t_kline["volume"].values.astype(float) if "volume" in t_kline.columns else np.array([])
                         t_ff = fetch_fund_flow(t_code)
-                        from src.scoring import compute_score
                         t_si = compute_score(t_closes, t_volumes, t_price, t_ff, code=t_code)
                         t_score = t_si.get("score", 0)
-                        # 预测
-                        t_pred = predict_tomorrow(t_closes, t_closes, t_closes, t_volumes, t_price)
+                        # 预测（使用K线中的高/低数据）
+                        t_highs = t_kline["high"].values.astype(float) if "high" in t_kline.columns else t_closes
+                        t_lows = t_kline["low"].values.astype(float) if "low" in t_kline.columns else t_closes
+                        t_pred = predict_tomorrow(t_closes, t_highs, t_lows, t_volumes, t_price)
                         t_has = t_code in paper.portfolio.positions
                         if not t_has and t_score >= 45 and t_pred["direction"] == "看涨":
                             buy_t = paper._buy_position(t_code, t_name, t_price, 0.20,
