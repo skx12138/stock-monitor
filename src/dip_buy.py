@@ -368,36 +368,37 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
             lines.append(f"📡 {market_info}")
         else:
             lines.append("当前没有同时满足涨幅1%~5%、多头趋势、RSI 40~65、量比>0.7的个股")
-            lines.append("")
-            # 列出全市场股票评分
-            lines.append(f"**📊 全市场扫描**")
-            lines.append("")
-            pool = {k: v for k, v in QUALITY_POOL.items() if not tech_only or k in TECH_STOCKS}
-            for s_code, s_name in pool.items():
-                if s_code.startswith("30"):
-                    continue
-                rt = fetch_realtime(s_code)
-                if not rt:
-                    continue
-                sp = rt.get("price", 0)
-                sc = rt.get("change_pct", 0)
-                sk = fetch_kline(s_code, days=65)
-                if sk is None or len(sk) < 25:
-                    continue
-                s_closes = sk["close"].values.astype(float)
-                s_volumes = sk["volume"].values.astype(float)
-                s_ff = fetch_fund_flow(s_code)
-                from src.scoring import compute_score
-                si = compute_score(s_closes, s_volumes, sp, s_ff)
-                ss = si.get("score", 0)
-                # 简单判断
-                s_rsi_v = _calc_rsi(s_closes, 14)
-                s_rsi_str = f"RSI{s_rsi_v:.0f}" if s_rsi_v else "RSI?"
-                s_ma5 = _sma(s_closes, 5)
-                s_ma20 = _sma(s_closes, 20)
-                s_valid = ~np.isnan(s_ma5) & ~np.isnan(s_ma20)
-                s_trend = "↑" if (len(s_ma5[s_valid]) > 0 and s_ma5[s_valid][-1] > s_ma20[s_valid][-1]) else "↓"
-                lines.append(f"  {sc:+.1f}% {s_name}({s_code}) 评分{ss} {s_trend} {s_rsi_str}")
+        lines.append("")
+        # 总是列出全市场股票评分
+        lines.append("")
+        lines.append(f"**📊 全市场扫描**")
+        lines.append("")
+        pool = {k: v for k, v in QUALITY_POOL.items() if not tech_only or k in TECH_STOCKS}
+        for s_code, s_name in pool.items():
+            if s_code.startswith("30"):
+                continue
+            rt = fetch_realtime(s_code)
+            if not rt:
+                continue
+            sp = rt.get("price", 0)
+            sc = rt.get("change_pct", 0)
+            sk = fetch_kline(s_code, days=65)
+            if sk is None or len(sk) < 25:
+                continue
+            s_closes = sk["close"].values.astype(float)
+            s_volumes = sk["volume"].values.astype(float)
+            s_ff = fetch_fund_flow(s_code)
+            from src.scoring import compute_score
+            si = compute_score(s_closes, s_volumes, sp, s_ff)
+            ss = si.get("score", 0)
+            # 简单判断
+            s_rsi_v = _calc_rsi(s_closes, 14)
+            s_rsi_str = f"RSI{s_rsi_v:.0f}" if s_rsi_v else "RSI?"
+            s_ma5 = _sma(s_closes, 5)
+            s_ma20 = _sma(s_closes, 20)
+            s_valid = ~np.isnan(s_ma5) & ~np.isnan(s_ma20)
+            s_trend = "↑" if (len(s_ma5[s_valid]) > 0 and s_ma5[s_valid][-1] > s_ma20[s_valid][-1]) else "↓"
+            lines.append(f"  {sc:+.1f}% {s_name}({s_code}) 评分{ss} {s_trend} {s_rsi_str}")
         lines.append("")
         lines.append("💡 明日开盘后重新评估")
         return "\n".join(lines)
