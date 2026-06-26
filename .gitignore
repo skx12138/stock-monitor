@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+credentials.json
+dynamic_sectors.json
+*.bat
+*.log
