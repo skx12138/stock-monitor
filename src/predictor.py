@@ -57,15 +57,15 @@ def predict_tomorrow(closes: np.ndarray, highs: np.ndarray, lows: np.ndarray,
             # 光头阳线：收盘=最高（强势）
             if upper_shadow < total_range * 0.05 and price > closes[-2]:
                 bullish_signals += 2
-                reasons.append("光头阳线强势收盘")
+                reasons.append("强势收涨")
             # 锤子线：长下影（探底回升）
             elif lower_shadow > total_range * 0.6 and upper_shadow < total_range * 0.3:
                 bullish_signals += 2
-                reasons.append("锤子线探底回升")
+                reasons.append("跌后反弹")
             # 倒锤子：长上影（高位受阻）
             elif upper_shadow > total_range * 0.6 and lower_shadow < total_range * 0.3:
                 bearish_signals += 2
-                reasons.append("倒锤线高位受阻")
+                reasons.append("冲高回落")
 
     # 3. 均线支撑
     ma5 = _sma(closes, 5)

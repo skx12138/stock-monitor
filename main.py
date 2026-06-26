@@ -366,7 +366,7 @@ def main():
                             ma_pos = ""
                             if len(ma5_v[ma_valid]) > 0:
                                 m5 = ma5_v[ma_valid][-1]; m20 = ma20_v[ma_valid][-1]
-                                ma_pos = "↑多头" if m5 > m20 else "↓空头"
+                                ma_pos = "趋势向上" if m5 > m20 else "趋势向下"
                             # 成交量
                             vol_trend = ""
                             if len(pv) >= 5:
