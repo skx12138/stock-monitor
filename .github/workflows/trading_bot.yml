@@ -1,15 +1,14 @@
 name: A股量化监控
 
-on:
+'on':
   schedule:
-    # 周一至周五 9:20 启动（北京时间 UTC+8 → UTC 1:20）
     - cron: '20 1 * * 1-5'
-  workflow_dispatch:  # 支持手动触发
+  workflow_dispatch:
 
 jobs:
   trading-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # 最长6小时（9:20~15:20）
+    timeout-minutes: 360
 
     steps:
       - name: 检出代码
