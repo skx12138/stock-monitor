@@ -273,7 +273,7 @@ def main():
         # 跑回测
         kline = fetch_kline(code, 365)
         if kline is not None:
-            r = backtest_ma_crossover(code, name, kline, ma_short=10, ma_long=40, rsi_filter=True, stop_loss_pct=12)
+            r = backtest_ma_crossover(code, name, kline, ma_short=10, ma_long=40, rsi_filter=True, stop_loss_pct=8)
             ret_icon = "📈" if r.total_return > 0 else "📉"
             backtest_lines.append(f"  {ret_icon} {name}({code}) {r.strategy}: {r.total_return:+.1f}% 胜率{r.win_rate:.0f}% 回撤{r.max_drawdown:.0f}% 交易{r.total_trades}次")
 
