@@ -628,15 +628,19 @@ def main():
                     logger.info("评分交易: %s %s", trade.action, name)
                     profit_str = f" 盈亏{trade.profit_pct:+.2f}%" if trade.profit_pct else ""
                     batch_messages.append(f"  🔄 {trade.action} {name} {trade.price:.2f}元×{trade.shares}股{profit_str}")
-                    # 重点提醒交易
+                    # 重点提醒交易（连续3次+时间）
                     trade_icon = "🟢" if "买入" in trade.action or trade.action == "加仓" else ("🔴" if "卖出" in trade.action else "🔄")
                     profit_extra = f" {trade.profit_pct:+.2f}%" if trade.profit_pct else ""
-                    notify(config, f"{trade_icon} 交易提醒",
+                    trade_msg = (
                         f"{trade_icon} **{trade.action} {name}**\n"
+                        f"⏰ {now.strftime('%H:%M:%S')}\n"
                         f"价格: {trade.price:.2f}元\n"
                         f"数量: {trade.shares}股\n"
                         f"金额: {trade.price*trade.shares:.0f}元{profit_extra}\n"
-                        f"原因: {trade.reason}")
+                        f"原因: {trade.reason}"
+                    )
+                    for _ in range(3):
+                        notify(config, f"{trade_icon} 交易提醒", trade_msg)
 
             paper.update_prices(current_prices)
 
