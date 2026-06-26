@@ -270,10 +270,16 @@ def scan_close_buy_candidates(max_price: float = 0, tech_only: bool = False) -> 
         price = realtime["price"]
         chg = realtime.get("change_pct", 0)
         disp_name = realtime.get("name") or name
+        is_dip = False
 
-        # 涨幅过滤：1%~5%（涨势要有强度，但不追涨停）
-        if chg < 1.0 or chg > 5.0:
-            continue
+        # ── 低吸标的：跌幅-2%~-8%，适合尾盘低吸 ──
+        if -8 <= chg <= -2:
+            is_dip = True
+        # ── 上涨标的：涨幅1%~5%（涨势要有强度） ──
+        elif 1 <= chg <= 5:
+            is_dip = False
+        else:
+            continue  # 不在涨幅/跌幅范围内，跳过
 
         kline = fetch_kline(code, days=65)
         if kline is None or len(kline) < 25:
@@ -290,7 +296,7 @@ def scan_close_buy_candidates(max_price: float = 0, tech_only: bool = False) -> 
         if score < 50:
             continue
 
-        # 均线多头排列检查（淘汰杂毛：必须MA5>MA10>MA20）
+        # 均线检查
         ma5 = _sma(closes, 5)
         ma10 = _sma(closes, 10)
         ma20 = _sma(closes, 20)
@@ -298,22 +304,44 @@ def scan_close_buy_candidates(max_price: float = 0, tech_only: bool = False) -> 
         s5, s10, s20 = ma5[valid], ma10[valid], ma20[valid]
         if len(s5) < 1:
             continue
-        if s5[-1] > s10[-1] > s20[-1]:
-            trend = "多头排列↑"
-        elif s5[-1] > s20[-1]:
-            trend = "短期偏多"
-        else:
-            continue  # 趋势偏弱，淘汰杂毛
 
-        # RSI检查（剔除弱势和超买）
+        if is_dip:
+            # 低吸标的：放宽均线要求，检查是否在MA20附近获得支撑
+            if s5[-1] > s10[-1] > s20[-1]:
+                trend = "多头排列↑"
+            elif s5[-1] > s20[-1]:
+                trend = "短期偏多"
+            elif s20[-1] > 0 and price > s20[-1] * 0.97:
+                # 即使趋势偏弱，但在MA20附近获得支撑也算
+                trend = "回踩MA20支撑"
+            else:
+                continue
+        else:
+            # 上涨标的：需要多头排列
+            if s5[-1] > s10[-1] > s20[-1]:
+                trend = "多头排列↑"
+            elif s5[-1] > s20[-1]:
+                trend = "短期偏多"
+            else:
+                continue  # 趋势偏弱，淘汰
+
+        # RSI检查
         rsi_val = _calc_rsi(closes, 14)
         if rsi_val:
-            if rsi_val > 65:
-                continue  # 超买不追
-            if rsi_val < 40:
-                continue  # 弱势不碰（杂毛）
+            if is_dip:
+                # 低吸标的：不要太超买，也不能太弱势
+                if rsi_val > 60:
+                    continue  # 跌幅大但RSI还高，说明还没跌透
+                if rsi_val < 20:
+                    continue  # 跌太狠了，不接飞刀
+            else:
+                # 上涨标的：适中范围
+                if rsi_val > 65:
+                    continue  # 超买不追
+                if rsi_val < 40:
+                    continue  # 弱势不碰
 
-        # 成交量检查（缩量没底气，淘汰）
+        # 成交量检查
         avg_v = np.mean(volumes[-5:]) if len(volumes) >= 5 else 0
         vol_ratio = volumes[-1] / avg_v if avg_v > 0 else 0
         if vol_ratio < 0.7:
@@ -329,12 +357,14 @@ def scan_close_buy_candidates(max_price: float = 0, tech_only: bool = False) -> 
             action = "✅ **建议买入**"
         else:
             action = "👀 **可关注**"
+        dtype = "低吸" if is_dip else "上涨"
 
         results.append({
             "code": code, "name": disp_name, "price": price,
             "chg": chg, "score": score, "rsi": rsi_val,
             "trend": trend, "vol_ratio": round(vol_ratio, 1),
             "action": action, "reason": "，".join(reasons),
+            "type": dtype,
         })
 
     results.sort(key=lambda r: r["score"], reverse=True)
@@ -364,7 +394,9 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
             lines.append("大盘跌幅较大(-1.5%+)，系统性风险偏高，不建议操作")
         elif "市场偏弱" in market_info:
             lines.append("大盘走势偏弱，个股机会有限，建议观望")
-        lines.append("当前没有同时满足涨幅1%~5%、多头趋势、RSI 40~65、量比>0.7的个股")
+        lines.append("当前没有同时满足条件的个股")
+        lines.append("上涨标的需：涨幅1%~5%、多头排列、RSI 40~65、量比>0.7")
+        lines.append("低吸标的需：跌幅2%~8%、MA20附近支撑、RSI 20~60、量比>0.7")
         lines.append("")
         # 监控股票分析
         lines.append(f"**📋 监控股票分析**")
@@ -437,8 +469,8 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
         lines.append("💡 明日开盘后重新评估")
         return "\n".join(lines)
 
-    lines.append(f"选股标准：涨幅1%~5%、多头排列、RSI适中(40~65)、量比>0.7")
-    lines.append(f"符合条件: {len(candidates)} 只（涨势较好的标的）")
+    lines.append(f"选股标准：涨幅1%~5%(追涨) 或 跌幅2%~8%(低吸)")
+    lines.append(f"符合条件: {len(candidates)} 只")
     # 加入明日预判
     for c in candidates[:6]:
         k_pred = fetch_kline(c["code"], 60)
@@ -476,8 +508,10 @@ def generate_close_buy_report(candidates: list[dict], max_price: float = 0, tech
         rsi = c.get("rsi", 0)
         vol = c.get("vol_ratio", 0)
         trend = c.get("trend", "")
+        dtype = c.get("type", "")
+        dtype_tag = "📈追涨" if dtype == "上涨" else "📉低吸"
         lines.append(
-            f"{i}. {c['action']}  {c['name']}({c['code']}){get_sector_tag(c['code'])}  {c['price']:.2f}元{pred_text}"
+            f"{i}. {c['action']}  {c['name']}({c['code']}){get_sector_tag(c['code'])}  {c['price']:.2f}元{dtype_tag}{pred_text}"
         )
         lines.append(f"   评分{score} · {trend} · RSI{rsi if rsi else '?'} · 量比{vol}")
         if c.get("pred_reason"):
