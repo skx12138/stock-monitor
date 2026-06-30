@@ -1,6 +1,6 @@
 {
-  "cash": 34411.08782500001,
-  "total_value": 99134.09,
+  "cash": 63055.374115000006,
+  "total_value": 98302.97,
   "positions": {
     "512480": {
       "stock_code": "512480",
@@ -8,11 +8,11 @@
       "buy_date": "2026-06-29",
       "buy_price": 2.825,
       "shares": 1600,
-      "current_price": 2.885,
+      "current_price": 2.786,
       "total_cost": 4520.4972,
-      "market_value": 4616.0,
-      "profit_pct": 2.12,
-      "profit_amount": 95.5,
+      "market_value": 4457.6,
+      "profit_pct": -1.38,
+      "profit_amount": -62.9,
       "peak_price": 2.885,
       "add_count": 0
     },
@@ -22,11 +22,11 @@
       "buy_date": "2026-06-29",
       "buy_price": 64.94,
       "shares": 100,
-      "current_price": 63.9,
+      "current_price": 60.55,
       "total_cost": 6499.06494,
-      "market_value": 6390.0,
-      "profit_pct": -1.6,
-      "profit_amount": -109.06,
+      "market_value": 6055.0,
+      "profit_pct": -6.76,
+      "profit_amount": -444.06,
       "peak_price": 67.13,
       "add_count": 0
     },
@@ -36,11 +36,11 @@
       "buy_date": "2026-06-29",
       "buy_price": 59.66,
       "shares": 100,
-      "current_price": 59.8,
+      "current_price": 57.67,
       "total_cost": 5971.05966,
-      "market_value": 5980.0,
-      "profit_pct": 0.23,
-      "profit_amount": 8.94,
+      "market_value": 5767.0,
+      "profit_pct": -3.34,
+      "profit_amount": -204.06,
       "peak_price": 62.02,
       "add_count": 0
     },
@@ -50,11 +50,11 @@
       "buy_date": "2026-06-29",
       "buy_price": 72.88,
       "shares": 100,
-      "current_price": 71.28,
+      "current_price": 68.75,
       "total_cost": 7293.07288,
-      "market_value": 7128.0,
-      "profit_pct": -2.2,
-      "profit_amount": -165.07,
+      "market_value": 6875.0,
+      "profit_pct": -5.67,
+      "profit_amount": -418.07,
       "peak_price": 72.88,
       "add_count": 0
     },
@@ -64,12 +64,12 @@
       "buy_date": "2026-06-29",
       "buy_price": 70.46,
       "shares": 100,
-      "current_price": 72.7,
+      "current_price": 70.71,
       "total_cost": 7051.070459999999,
-      "market_value": 7270.0,
-      "profit_pct": 3.18,
-      "profit_amount": 218.93,
-      "peak_price": 72.7,
+      "market_value": 7070.999999999999,
+      "profit_pct": 0.35,
+      "profit_amount": 19.93,
+      "peak_price": 71.99,
       "add_count": 0
     },
     "515880": {
@@ -78,54 +78,12 @@
       "buy_date": "2026-06-29",
       "buy_price": 1.656,
       "shares": 3000,
-      "current_price": 1.732,
+      "current_price": 1.674,
       "total_cost": 4968.54648,
-      "market_value": 5196.0,
-      "profit_pct": 4.59,
-      "profit_amount": 227.45,
-      "peak_price": 1.732,
-      "add_count": 0
-    },
-    "000811": {
-      "stock_code": "000811",
-      "stock_name": "冰轮环境",
-      "buy_date": "2026-06-30",
-      "buy_price": 50.56,
-      "shares": 200,
-      "current_price": 50.3,
-      "total_cost": 10117.10112,
-      "market_value": 10060.0,
-      "profit_pct": -0.51,
-      "profit_amount": -57.1,
-      "peak_price": 50.56,
-      "add_count": 0
-    },
-    "600584": {
-      "stock_code": "600584",
-      "stock_name": "长电科技",
-      "buy_date": "2026-06-30",
-      "buy_price": 101.29,
-      "shares": 100,
-      "current_price": 99.83,
-      "total_cost": 10134.10129,
-      "market_value": 9983.0,
-      "profit_pct": -1.44,
-      "profit_amount": -151.1,
-      "peak_price": 101.29,
-      "add_count": 0
-    },
-    "600667": {
-      "stock_code": "600667",
-      "stock_name": "太极实业",
-      "buy_date": "2026-06-30",
-      "buy_price": 27.96,
-      "shares": 300,
-      "current_price": 27.0,
-      "total_cost": 8393.08388,
-      "market_value": 8100.0,
-      "profit_pct": -3.43,
-      "profit_amount": -293.08,
-      "peak_price": 27.96,
+      "market_value": 5022.0,
+      "profit_pct": 1.09,
+      "profit_amount": 53.45,
+      "peak_price": 1.692,
       "add_count": 0
     }
   },
@@ -591,39 +549,6 @@
       "reason": "评分68分买入8%仓位·震荡·大盘跌",
       "profit_pct": 0.0,
       "profit_amount": 0.0
-    },
-    {
-      "stock_code": "000811",
-      "stock_name": "冰轮环境",
-      "action": "加仓",
-      "date": "2026-06-30",
-      "price": 50.56,
-      "shares": 200,
-      "reason": "开盘买入·评分60·预测看涨",
-      "profit_pct": 0.0,
-      "profit_amount": 0.0
-    },
-    {
-      "stock_code": "600584",
-      "stock_name": "长电科技",
-      "action": "加仓",
-      "date": "2026-06-30",
-      "price": 101.29,
-      "shares": 100,
-      "reason": "开盘买入·评分52·预测看涨",
-      "profit_pct": 0.0,
-      "profit_amount": 0.0
-    },
-    {
-      "stock_code": "600667",
-      "stock_name": "太极实业",
-      "action": "加仓",
-      "date": "2026-06-30",
-      "price": 27.96,
-      "shares": 300,
-      "reason": "开盘买入·评分55·预测看涨",
-      "profit_pct": 0.0,
-      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -650,10 +575,6 @@
     {
       "date": "2026-06-29",
       "value": 98302.97
-    },
-    {
-      "date": "2026-06-30",
-      "value": 99134.09
     }
   ]
 }

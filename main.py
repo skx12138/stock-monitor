@@ -350,105 +350,6 @@ def main():
 
         now_time = now.time()
 
-        # ── 开盘前分析（9:20-9:30，在交易时段外执行） ──
-        if not premarket_done and dt_time(9, 20) <= now_time <= dt_time(9, 30):
-            premarket_done = True
-            logger.info("生成开盘前分析...")
-            try:
-                from src.fetcher import fetch_market_index
-                from src.predictor import predict_tomorrow
-                pre_lines = ["\U0001f305 **开盘前分析**", ""]
-                # 大盘
-                try:
-                    sh = fetch_market_index("000001")
-                    if sh:
-                        icon = "\U0001f4c8" if sh["change_pct"] >= 0 else "\U0001f4c9"
-                        pre_lines.append(f"{icon} 大盘: {sh['name']} {sh['price']} {sh['change_pct']:+.2f}%")
-                        pre_lines.append("")
-                except: pass
-                # 个股明日预测+评分
-                bullish = bearish = neutral = 0
-                for p_code, p_name in stocks.items():
-                    pk = fetch_kline(p_code, 60)
-                    if pk is not None and len(pk) > 20:
-                        pc = pk["close"].values.astype(float)
-                        pv = pk["volume"].values.astype(float) if "volume" in pk.columns else np.array([])
-                        ph = pk["high"].values.astype(float) if "high" in pk.columns else pc
-                        pl = pk["low"].values.astype(float) if "low" in pk.columns else pc
-                        p_pred = predict_tomorrow(pc, ph, pl, pv, pc[-1])
-                        icon = {"看涨": "\U0001f4c8", "看跌": "\U0001f4c9", "震荡": "\u2796"}.get(p_pred["direction"], "")
-                        kline_reason = p_pred.get("reason", "")
-                        if len(pc) >= 5:
-                            chg_5d = (pc[-1] / pc[-5] - 1) * 100
-                            trend_5d = f"5日{chg_5d:+.1f}%"
-                        else:
-                            trend_5d = ""
-                        from src.signals import _sma
-                        ma5_v = _sma(pc, 5); ma20_v = _sma(pc, 20)
-                        ma_valid = ~np.isnan(ma5_v) & ~np.isnan(ma20_v)
-                        ma_pos = ""
-                        if len(ma5_v[ma_valid]) > 0:
-                            m5 = ma5_v[ma_valid][-1]; m20 = ma20_v[ma_valid][-1]
-                            ma_pos = "趋势向上" if m5 > m20 else "趋势向下"
-                        vol_trend = ""
-                        if len(pv) >= 5:
-                            avg_v = np.mean(pv[-5:])
-                            if avg_v > 0:
-                                vr = pv[-1] / avg_v
-                                vol_trend = f"量{vr:.1f}"
-                        extra = " | ".join(filter(None, [kline_reason[:15], trend_5d, ma_pos, vol_trend]))
-                        pre_lines.append(f"  {icon} {p_name}({p_code}): {p_pred['direction']}({p_pred['confidence']}%)")
-                        if extra:
-                            pre_lines.append(f"     {extra}")
-                        if p_pred["direction"] == "看涨": bullish += 1
-                        elif p_pred["direction"] == "看跌": bearish += 1
-                        else: neutral += 1
-                if bullish + bearish + neutral > 0:
-                    t = bullish + bearish + neutral
-                    ti = "\U0001f4c8" if bullish >= bearish else "\U0001f4c9"
-                    pre_lines.insert(1, f"{ti} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只")
-                # ── 开盘前自动交易（基于昨日收盘数据） ──
-                trade_lines = []
-                for t_code, t_name in stocks.items():
-                    rt = fetch_realtime(t_code)
-                    if not rt: continue
-                    t_price = rt.get("price", 0)
-                    t_kline = fetch_kline(t_code, 60)
-                    if t_kline is None or len(t_kline) < 25: continue
-                    t_closes = t_kline["close"].values.astype(float)
-                    t_volumes = t_kline["volume"].values.astype(float) if "volume" in t_kline.columns else np.array([])
-                    t_ff = fetch_fund_flow(t_code)
-                    t_si = compute_score(t_closes, t_volumes, t_price, t_ff, code=t_code)
-                    t_score = t_si.get("score", 0)
-                    t_highs = t_kline["high"].values.astype(float) if "high" in t_kline.columns else t_closes
-                    t_lows = t_kline["low"].values.astype(float) if "low" in t_kline.columns else t_closes
-                    t_pred = predict_tomorrow(t_closes, t_highs, t_lows, t_volumes, t_price)
-                    t_has = t_code in paper.portfolio.positions
-                    if not t_has and t_score >= 45 and t_pred["direction"] == "看涨":
-                        buy_t = paper._buy_position(t_code, t_name, t_price, 0.20,
-                            f"开盘买入·评分{t_score}·预测{t_pred['direction']}", add_count=0)
-                        if buy_t:
-                            trade_lines.append(f"  \U0001f7e2 买入 {t_name}({t_code}) {t_price:.2f}元")
-                    elif t_has and (t_score < 35 or t_pred["direction"] == "看跌"):
-                        pos = paper.portfolio.positions.get(t_code)
-                        if pos and pos.buy_date != date.today().isoformat():
-                            sell_t = paper._sell_position(t_code, t_price,
-                                f"开盘卖出·评分{t_score}·预测{t_pred['direction']}")
-                            if sell_t:
-                                trade_lines.append(f"  \U0001f534 卖出 {t_name}({t_code}) {t_price:.2f}元")
-                if trade_lines:
-                    pre_lines.append("")
-                    pre_lines.append("\U0001f504 **开盘自动交易**")
-                    pre_lines.extend(trade_lines)
-                pre_lines.append("")
-                pre_lines.append("\U0001f4a1 **今日关注**")
-                pre_lines.append("  \u2022 评分\u226545+预测看涨可买入")
-                pre_lines.append("  \u2022 已持仓评分<35需卖出")
-                pre_lines.append("  \u2022 9:30开盘后自动监控")
-                notify(config, "\U0001f305 开盘前分析", "\n".join(pre_lines))
-            except Exception as e:
-                logger.debug("开盘前分析失败: %s", e)
-
         if is_trading_time():
 
             # ── 启动通知（9:30，每天一次） ──
@@ -456,6 +357,112 @@ def main():
                 startup_done = True
                 logger.info("推送启动通知...")
                 notify_startup(config)
+
+            # ── 开盘前分析（9:20-9:30，每天一次） ──
+            if not premarket_done and now_time >= dt_time(9, 20) and now_time <= dt_time(9, 30):
+                premarket_done = True
+                logger.info("生成开盘前分析...")
+                try:
+                    from src.fetcher import fetch_market_index
+                    from src.predictor import predict_tomorrow
+                    pre_lines = ["\U0001f305 **开盘前分析**", ""]
+                    # 大盘
+                    try:
+                        sh = fetch_market_index("000001")
+                        if sh:
+                            icon = "\U0001f4c8" if sh["change_pct"] >= 0 else "\U0001f4c9"
+                            pre_lines.append(f"{icon} 大盘: {sh['name']} {sh['price']} {sh['change_pct']:+.2f}%")
+                            pre_lines.append("")
+                    except: pass
+                    # 个股明日预测+评分
+                    bullish = bearish = neutral = 0
+                    for p_code, p_name in stocks.items():
+                        pk = fetch_kline(p_code, 60)
+                        if pk is not None and len(pk) > 20:
+                            pc = pk["close"].values.astype(float)
+                            pv = pk["volume"].values.astype(float) if "volume" in pk.columns else np.array([])
+                            ph = pk["high"].values.astype(float) if "high" in pk.columns else pc
+                            pl = pk["low"].values.astype(float) if "low" in pk.columns else pc
+                            p_pred = predict_tomorrow(pc, ph, pl, pv, pc[-1])
+                            icon = {"看涨": "\U0001f4c8", "看跌": "\U0001f4c9", "震荡": "\u2796"}.get(p_pred["direction"], "")
+                            # K线形态分析
+                            kline_reason = p_pred.get("reason", "")
+                            # 近5日趋势
+                            if len(pc) >= 5:
+                                chg_5d = (pc[-1] / pc[-5] - 1) * 100
+                                trend_5d = f"5日{chg_5d:+.1f}%"
+                            else:
+                                trend_5d = ""
+                            # 均线位置
+                            from src.signals import _sma
+                            ma5_v = _sma(pc, 5); ma20_v = _sma(pc, 20)
+                            ma_valid = ~np.isnan(ma5_v) & ~np.isnan(ma20_v)
+                            ma_pos = ""
+                            if len(ma5_v[ma_valid]) > 0:
+                                m5 = ma5_v[ma_valid][-1]; m20 = ma20_v[ma_valid][-1]
+                                ma_pos = "趋势向上" if m5 > m20 else "趋势向下"
+                            # 成交量
+                            vol_trend = ""
+                            if len(pv) >= 5:
+                                avg_v = np.mean(pv[-5:])
+                                if avg_v > 0:
+                                    vr = pv[-1] / avg_v
+                                    vol_trend = f"量{vr:.1f}"
+                            # 精简显示
+                            extra = " | ".join(filter(None, [kline_reason[:15], trend_5d, ma_pos, vol_trend]))
+                            pre_lines.append(f"  {icon} {p_name}({p_code}): {p_pred['direction']}({p_pred['confidence']}%)")
+                            if extra:
+                                pre_lines.append(f"     {extra}")
+                            if p_pred["direction"] == "看涨": bullish += 1
+                            elif p_pred["direction"] == "看跌": bearish += 1
+                            else: neutral += 1
+                    if bullish + bearish + neutral > 0:
+                        t = bullish + bearish + neutral
+                        ti = "\U0001f4c8" if bullish >= bearish else "\U0001f4c9"
+                        pre_lines.insert(1, f"{ti} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只")
+                    # ── 开盘前自动交易（基于昨日收盘数据） ──
+                    trade_lines = []
+                    for t_code, t_name in stocks.items():
+                        rt = fetch_realtime(t_code)
+                        if not rt: continue
+                        t_price = rt.get("price", 0)
+                        t_kline = fetch_kline(t_code, 60)
+                        if t_kline is None or len(t_kline) < 25: continue
+                        t_closes = t_kline["close"].values.astype(float)
+                        t_volumes = t_kline["volume"].values.astype(float) if "volume" in t_kline.columns else np.array([])
+                        t_ff = fetch_fund_flow(t_code)
+                        t_si = compute_score(t_closes, t_volumes, t_price, t_ff, code=t_code)
+                        t_score = t_si.get("score", 0)
+                        # 预测（使用K线中的高/低数据）
+                        t_highs = t_kline["high"].values.astype(float) if "high" in t_kline.columns else t_closes
+                        t_lows = t_kline["low"].values.astype(float) if "low" in t_kline.columns else t_closes
+                        t_pred = predict_tomorrow(t_closes, t_highs, t_lows, t_volumes, t_price)
+                        t_has = t_code in paper.portfolio.positions
+                        if not t_has and t_score >= 45 and t_pred["direction"] == "看涨":
+                            buy_t = paper._buy_position(t_code, t_name, t_price, 0.20,
+                                f"开盘买入·评分{t_score}·预测{t_pred['direction']}", add_count=0)
+                            if buy_t:
+                                trade_lines.append(f"  \U0001f7e2 买入 {t_name}({t_code}) {t_price:.2f}元")
+                        elif t_has and (t_score < 35 or t_pred["direction"] == "看跌"):
+                            pos = paper.portfolio.positions.get(t_code)
+                            if pos and pos.buy_date != date.today().isoformat():
+                                sell_t = paper._sell_position(t_code, t_price,
+                                    f"开盘卖出·评分{t_score}·预测{t_pred['direction']}")
+                                if sell_t:
+                                    trade_lines.append(f"  \U0001f534 卖出 {t_name}({t_code}) {t_price:.2f}元")
+                    if trade_lines:
+                        pre_lines.append("")
+                        pre_lines.append("\U0001f504 **开盘自动交易**")
+                        pre_lines.extend(trade_lines)
+                    # 推荐关注
+                    pre_lines.append("")
+                    pre_lines.append("\U0001f4a1 **今日关注**")
+                    pre_lines.append("  \u2022 评分\u226545+预测看涨可买入")
+                    pre_lines.append("  \u2022 已持仓评分<35需卖出")
+                    pre_lines.append("  \u2022 9:30开盘后自动监控")
+                    notify(config, "\U0001f305 开盘前分析", "\n".join(pre_lines))
+                except Exception as e:
+                    logger.debug("开盘前分析失败: %s", e)
 
             # ── 尾盘低吸扫描（14:30-15:00，每天一次） ──
             if (

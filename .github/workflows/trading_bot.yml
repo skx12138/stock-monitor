@@ -1,0 +1,40 @@
+name: A股量化监控
+
+'on':
+  schedule:
+    - cron: '20 1 * * 1-5'
+  workflow_dispatch:
+
+env:
+  TZ: 'Asia/Shanghai'
+
+jobs:
+  trading-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行机器人
+        run: python run.py
+        env:
+          WECOM_WEBHOOK: ${{ secrets.WECOM_WEBHOOK }}
+
+      - name: 保存交易数据
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add papertrade_data.json -f
+          git diff --quiet && git diff --staged --quiet || \
+            git commit -m "auto: update trading data $(date +'%Y-%m-%d')"
+          git push
