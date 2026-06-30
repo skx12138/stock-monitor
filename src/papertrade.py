@@ -402,8 +402,25 @@ class PaperTrading:
 
         # ── 深跌反弹机会：当日跌幅巨大时放宽大盘/预测过滤 ──
         intraday_chg = score_info.get("change_pct", 0)
-        deep_drop = intraday_chg < -5  # 当日跌超5%视为深跌机会
-        heavy_drop = intraday_chg < -8  # 跌超8%视为暴跌
+        deep_drop = intraday_chg < -5  # 默认5%（会被ATR动态覆盖）
+        heavy_drop = intraday_chg < -8  # 默认8%（会被ATR动态覆盖）
+        # 用ATR动态计算暴跌阈值（波动大的股票容忍度更高）
+        try:
+            from src.signals import calc_atr
+            if kline is not None and len(kline) > 20 and "high" in kline.columns and "low" in kline.columns:
+                c_atr = kline["close"].values.astype(float)
+                h_atr = kline["high"].values.astype(float)
+                l_atr = kline["low"].values.astype(float)
+                atr_val = calc_atr(c_atr, h_atr, l_atr, 14)
+                if atr_val > 0 and current_price > 0:
+                    atr_pct = atr_val / current_price * 100  # ATR百分比
+                    deep_thresh = max(-atr_pct * 2.0, -10)   # 2倍ATR，最多-10%
+                    heavy_thresh = max(-atr_pct * 3.0, -15)  # 3倍ATR，最多-15%
+                    deep_drop = intraday_chg < deep_thresh
+                    heavy_drop = intraday_chg < heavy_thresh
+                    logger.info("ATR动态阈值: %s ATR=%.1f%% 深跌%.0f%% 暴跌%.0f%%", name, atr_pct, deep_thresh, heavy_thresh)
+        except:
+            pass
 
         # ── 暴跌加仓分析：检查近几日趋势 ──
         drop_analysis = ""
