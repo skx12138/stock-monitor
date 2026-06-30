@@ -473,10 +473,8 @@ def main():
                 logger.info("开始尾盘低吸扫描...")
                 candidates = scan_dip_buy_candidates(max_price=150, tech_only=True)
                 # 尾盘低吸推送已取消
-                # 同时推送模拟账户报告
-                acc_report = paper.generate_report()
-                if acc_report:
-                    notify(config, "📋 模拟账户日报", acc_report)
+                # 尾盘低吸推送已取消
+                # 模拟账户日报改到尾盘推送
 
             # ── 尾盘买入扫描（14:50-15:00，每天一次） ──
             if (
@@ -486,9 +484,11 @@ def main():
                 close_buy_done_today = True
                 logger.info("开始尾盘买入扫描...")
                 close_candidates = scan_close_buy_candidates(max_price=150, tech_only=True)
-                close_report = generate_close_buy_report(close_candidates, max_price=150, tech_only=True)
-                if close_report:
-                    notify(config, "📋 尾盘买入推荐", close_report)
+                # 尾盘买入推荐已取消
+                # 尾盘推送模拟账户日报
+                acc_report = paper.generate_report()
+                if acc_report:
+                    notify(config, "📋 模拟账户日报", acc_report)
                 # 尾盘自动交易：推荐股票买入（需次日看涨），ETF优先
                 for c in close_candidates[:3]:
                     if c["code"] not in paper.portfolio.positions and c["score"] >= 55:
@@ -713,29 +713,6 @@ def main():
                         f"{pos_str}")
 
             paper.update_prices(current_prices)
-
-            # ── 总持仓概况推送（每30分钟一次） ──
-            summary_key = f"acct_{now.strftime('%Y%m%d_%H')}_{now.minute // 30}"
-            if summary_key not in intraday_alerts:
-                intraday_alerts.add(summary_key)
-                total_positions = len(paper.portfolio.positions)
-                if total_positions > 0:
-                    pos_value = paper.portfolio.total_value - paper.portfolio.cash
-                    cash_val = paper.portfolio.cash
-                    total_ret = (paper.portfolio.total_value - 100000) / 100000 * 100
-                    pos_lines = [f"📊 **账户概况** · {now.strftime('%H:%M')}", ""]
-                    pos_lines.append(f"  💰 总资产: {paper.portfolio.total_value:,.2f}元")
-                    pos_lines.append(f"  📦 持仓: {total_positions}只 | 市值{pos_value:,.0f}元")
-                    pos_lines.append(f"  💳 现金: {cash_val:,.2f}元")
-                    pos_lines.append(f"  📈 总收益: {total_ret:+.2f}%")
-                    if total_positions > 0:
-                        pos_lines.append("")
-                        pos_lines.append(f"  **持仓明细:**")
-                        for pcode, ppos in sorted(paper.portfolio.positions.items(), key=lambda x: x[1].market_value, reverse=True):
-                            pct = ppos.profit_pct
-                            icon_p = "🟢" if pct >= 0 else "🔴"
-                            pos_lines.append(f"  {icon_p} {ppos.stock_name}({pcode}): {ppos.shares}股 {ppos.current_price:.2f}元 {pct:+.2f}%")
-                    notify(config, "📊 账户概况", "\n".join(pos_lines))
 
             # ── 检测单股异动，有变动时单独推送 ──
             if stock_snapshots and last_snapshot:
