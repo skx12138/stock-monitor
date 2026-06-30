@@ -756,7 +756,7 @@ class PaperTrading:
         股票：万2.5，最低5元
         ETF/基金：万1，最低0.1元
         """
-        is_etf = code.startswith(("51", "52", "15", "16"))
+        is_etf = code.startswith(("51", "52", "58", "15", "16"))
         if is_etf:
             comm = max(amount * self.etf_commission, self.min_etf_commission)
         else:
