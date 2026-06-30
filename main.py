@@ -473,17 +473,23 @@ def main():
                             buy_t = paper._buy_position(t_code, t_name, t_price, 0.20,
                                 f"开盘买入·评分{t_score}·预测{t_pred['direction']}", add_count=0)
                             if buy_t:
-                                trade_lines.append(f"  \U0001f7e2 买入 {t_name}({t_code}) {t_price:.2f}元")
+                                trade_lines.append(f"  \U0001f7e2 买入 {t_name}({t_code}) {t_price:.2f}元×{buy_t.shares}股 评分{t_score}")
                         elif t_has and (t_score < 35 or t_pred["direction"] == "看跌"):
                             pos = paper.portfolio.positions.get(t_code)
                             if pos and pos.buy_date != date.today().isoformat():
                                 sell_t = paper._sell_position(t_code, t_price,
                                     f"开盘卖出·评分{t_score}·预测{t_pred['direction']}")
                                 if sell_t:
-                                    trade_lines.append(f"  \U0001f534 卖出 {t_name}({t_code}) {t_price:.2f}元")
+                                    sell_profit = f" 盈亏{sell_t.profit_pct:+.2f}%" if sell_t.profit_pct else ""
+                                    trade_lines.append(f"  \U0001f534 卖出 {t_name}({t_code}) {t_price:.2f}元×{sell_t.shares}股{sell_profit}")
                     if trade_lines:
                         trade_notify = ["\U0001f504 **开盘自动交易**", ""]
                         trade_notify.extend(trade_lines)
+                        # 账户概况
+                        total_pos = len(paper.portfolio.positions)
+                        pnl = (paper.portfolio.total_value - 100000) / 100000 * 100
+                        trade_notify.append("")
+                        trade_notify.append(f"  📊 持仓{total_pos}只 总资产{paper.portfolio.total_value:,.0f}元 ({pnl:+.2f}%)")
                         notify(config, "\U0001f504 开盘自动交易", "\n".join(trade_notify))
                 except Exception as e:
                     logger.debug("开盘前分析失败: %s", e)
