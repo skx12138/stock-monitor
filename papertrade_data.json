@@ -1,19 +1,19 @@
 {
-  "cash": 63055.374115000006,
-  "total_value": 98302.97,
+  "cash": 36793.24069700001,
+  "total_value": 101917.04,
   "positions": {
     "512480": {
       "stock_code": "512480",
       "stock_name": "半导体ETF国联安",
       "buy_date": "2026-06-29",
       "buy_price": 2.825,
-      "shares": 1600,
-      "current_price": 2.786,
-      "total_cost": 4520.4972,
-      "market_value": 4457.6,
-      "profit_pct": -1.38,
-      "profit_amount": -62.9,
-      "peak_price": 2.885,
+      "shares": 800,
+      "current_price": 2.981,
+      "total_cost": 2260.2486,
+      "market_value": 2384.7999999999997,
+      "profit_pct": 4.07,
+      "profit_amount": 183.5,
+      "peak_price": 2.981,
       "add_count": 0
     },
     "600105": {
@@ -22,11 +22,11 @@
       "buy_date": "2026-06-29",
       "buy_price": 64.94,
       "shares": 100,
-      "current_price": 60.55,
+      "current_price": 66.16,
       "total_cost": 6499.06494,
-      "market_value": 6055.0,
-      "profit_pct": -6.76,
-      "profit_amount": -444.06,
+      "market_value": 6616.0,
+      "profit_pct": 1.88,
+      "profit_amount": 116.94,
       "peak_price": 67.13,
       "add_count": 0
     },
@@ -36,11 +36,11 @@
       "buy_date": "2026-06-29",
       "buy_price": 59.66,
       "shares": 100,
-      "current_price": 57.67,
+      "current_price": 59.73,
       "total_cost": 5971.05966,
-      "market_value": 5767.0,
-      "profit_pct": -3.34,
-      "profit_amount": -204.06,
+      "market_value": 5973.0,
+      "profit_pct": 0.12,
+      "profit_amount": 1.94,
       "peak_price": 62.02,
       "add_count": 0
     },
@@ -50,12 +50,12 @@
       "buy_date": "2026-06-29",
       "buy_price": 72.88,
       "shares": 100,
-      "current_price": 68.75,
+      "current_price": 74.41,
       "total_cost": 7293.07288,
-      "market_value": 6875.0,
-      "profit_pct": -5.67,
-      "profit_amount": -418.07,
-      "peak_price": 72.88,
+      "market_value": 7441.0,
+      "profit_pct": 2.1,
+      "profit_amount": 147.93,
+      "peak_price": 74.93,
       "add_count": 0
     },
     "600498": {
@@ -64,12 +64,12 @@
       "buy_date": "2026-06-29",
       "buy_price": 70.46,
       "shares": 100,
-      "current_price": 70.71,
+      "current_price": 72.95,
       "total_cost": 7051.070459999999,
-      "market_value": 7070.999999999999,
-      "profit_pct": 0.35,
-      "profit_amount": 19.93,
-      "peak_price": 71.99,
+      "market_value": 7295.0,
+      "profit_pct": 3.53,
+      "profit_amount": 243.93,
+      "peak_price": 73.2,
       "add_count": 0
     },
     "515880": {
@@ -78,12 +78,54 @@
       "buy_date": "2026-06-29",
       "buy_price": 1.656,
       "shares": 3000,
-      "current_price": 1.674,
+      "current_price": 1.778,
       "total_cost": 4968.54648,
-      "market_value": 5022.0,
-      "profit_pct": 1.09,
-      "profit_amount": 53.45,
-      "peak_price": 1.692,
+      "market_value": 5334.0,
+      "profit_pct": 7.37,
+      "profit_amount": 365.45,
+      "peak_price": 1.781,
+      "add_count": 0
+    },
+    "000811": {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "buy_date": "2026-06-30",
+      "buy_price": 50.56,
+      "shares": 200,
+      "current_price": 56.22,
+      "total_cost": 10117.10112,
+      "market_value": 11244.0,
+      "profit_pct": 11.19,
+      "profit_amount": 1126.9,
+      "peak_price": 56.22,
+      "add_count": 0
+    },
+    "600584": {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "buy_date": "2026-06-30",
+      "buy_price": 101.29,
+      "shares": 100,
+      "current_price": 101.96,
+      "total_cost": 10134.10129,
+      "market_value": 10196.0,
+      "profit_pct": 0.66,
+      "profit_amount": 61.9,
+      "peak_price": 101.96,
+      "add_count": 0
+    },
+    "600667": {
+      "stock_code": "600667",
+      "stock_name": "太极实业",
+      "buy_date": "2026-06-30",
+      "buy_price": 27.96,
+      "shares": 300,
+      "current_price": 28.8,
+      "total_cost": 8393.08388,
+      "market_value": 8640.0,
+      "profit_pct": 3.0,
+      "profit_amount": 246.92,
+      "peak_price": 28.8,
       "add_count": 0
     }
   },
@@ -549,6 +591,50 @@
       "reason": "评分68分买入8%仓位·震荡·大盘跌",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "加仓",
+      "date": "2026-06-30",
+      "price": 50.56,
+      "shares": 200,
+      "reason": "开盘买入·评分60·预测看涨",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "action": "加仓",
+      "date": "2026-06-30",
+      "price": 101.29,
+      "shares": 100,
+      "reason": "开盘买入·评分52·预测看涨",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600667",
+      "stock_name": "太极实业",
+      "action": "加仓",
+      "date": "2026-06-30",
+      "price": 27.96,
+      "shares": 300,
+      "reason": "开盘买入·评分55·预测看涨",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "512480",
+      "stock_name": "半导体ETF国联安",
+      "action": "卖出(部分)",
+      "date": "2026-06-30",
+      "price": 2.98,
+      "shares": 800,
+      "reason": "评分43·趋势向上减半",
+      "profit_pct": 5.39,
+      "profit_amount": 121.9
     }
   ],
   "daily_values": [
@@ -575,6 +661,10 @@
     {
       "date": "2026-06-29",
       "value": 98302.97
+    },
+    {
+      "date": "2026-06-30",
+      "value": 101854.09
     }
   ]
 }
