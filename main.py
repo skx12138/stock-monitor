@@ -513,7 +513,7 @@ def main():
             ):
                 close_buy_done_today = True
                 logger.info("开始尾盘买入扫描...")
-                close_candidates = scan_close_buy_candidates(max_price=150, tech_only=True)
+                close_candidates = scan_close_buy_candidates(max_price=150, tech_only=True, monitored_stocks=stocks)
                 # 尾盘买入推荐已取消
                 # 尾盘推送模拟账户日报
                 acc_report = paper.generate_report()

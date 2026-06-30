@@ -239,16 +239,10 @@ def scan_dip_buy_candidates(max_price: float = 0, tech_only: bool = False) -> li
     return results
 
 
-def scan_close_buy_candidates(max_price: float = 0, tech_only: bool = False) -> list[dict]:
-    """尾盘买入扫描 — 14:50-15:00 运行
+def scan_close_buy_candidates(max_price: float = 0, tech_only: bool = False, monitored_stocks: dict = None) -> list[dict]:
+    """尾盘买入扫描 — 14:50-15:00 运行，优先检查监控股票
 
-    根据市场实际情况决定是否推荐：
-      - 大盘跌超1.5% → 不推荐（市场太差）
-      - 大盘震荡或上涨 → 正常推荐
-      - 个股条件同上
-
-    Returns:
-        按评分排序的候选列表，如果市场不适合会返回空列表
+    先扫描监控列表中的股票是否需要加仓，再扫描优质股票池
     """
     # ── 先看大盘环境 ──
     market_ok, market_info = _check_market_condition()
@@ -258,9 +252,17 @@ def scan_close_buy_candidates(max_price: float = 0, tech_only: bool = False) -> 
         logger.info("尾盘买入跳过：%s", market_info)
         return []
 
-    pool = {k: v for k, v in QUALITY_POOL.items() if not tech_only or k in TECH_STOCKS}
+    # 先扫描监控的股票
+    scan_pool = {}
+    if monitored_stocks:
+        scan_pool.update(monitored_stocks)
+    # 再补充优质股票池（去重）
+    pool2 = {k: v for k, v in QUALITY_POOL.items() if not tech_only or k in TECH_STOCKS}
+    for k, v in pool2.items():
+        if k not in scan_pool:
+            scan_pool[k] = v
 
-    for code, name in pool.items():
+    for code, name in scan_pool.items():
         if code.startswith("30"):
             continue
         logger.info("尾盘扫描 %s (%s)...", name, code)
