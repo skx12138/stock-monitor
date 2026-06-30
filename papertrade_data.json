@@ -1,0 +1,659 @@
+{
+  "cash": 34411.08782500001,
+  "total_value": 99134.09,
+  "positions": {
+    "512480": {
+      "stock_code": "512480",
+      "stock_name": "半导体ETF国联安",
+      "buy_date": "2026-06-29",
+      "buy_price": 2.825,
+      "shares": 1600,
+      "current_price": 2.885,
+      "total_cost": 4520.4972,
+      "market_value": 4616.0,
+      "profit_pct": 2.12,
+      "profit_amount": 95.5,
+      "peak_price": 2.885,
+      "add_count": 0
+    },
+    "600105": {
+      "stock_code": "600105",
+      "stock_name": "永鼎股份",
+      "buy_date": "2026-06-29",
+      "buy_price": 64.94,
+      "shares": 100,
+      "current_price": 63.9,
+      "total_cost": 6499.06494,
+      "market_value": 6390.0,
+      "profit_pct": -1.6,
+      "profit_amount": -109.06,
+      "peak_price": 67.13,
+      "add_count": 0
+    },
+    "600522": {
+      "stock_code": "600522",
+      "stock_name": "中天科技",
+      "buy_date": "2026-06-29",
+      "buy_price": 59.66,
+      "shares": 100,
+      "current_price": 59.8,
+      "total_cost": 5971.05966,
+      "market_value": 5980.0,
+      "profit_pct": 0.23,
+      "profit_amount": 8.94,
+      "peak_price": 62.02,
+      "add_count": 0
+    },
+    "002156": {
+      "stock_code": "002156",
+      "stock_name": "通富微电",
+      "buy_date": "2026-06-29",
+      "buy_price": 72.88,
+      "shares": 100,
+      "current_price": 71.28,
+      "total_cost": 7293.07288,
+      "market_value": 7128.0,
+      "profit_pct": -2.2,
+      "profit_amount": -165.07,
+      "peak_price": 72.88,
+      "add_count": 0
+    },
+    "600498": {
+      "stock_code": "600498",
+      "stock_name": "烽火通信",
+      "buy_date": "2026-06-29",
+      "buy_price": 70.46,
+      "shares": 100,
+      "current_price": 72.7,
+      "total_cost": 7051.070459999999,
+      "market_value": 7270.0,
+      "profit_pct": 3.18,
+      "profit_amount": 218.93,
+      "peak_price": 72.7,
+      "add_count": 0
+    },
+    "515880": {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "buy_date": "2026-06-29",
+      "buy_price": 1.656,
+      "shares": 3000,
+      "current_price": 1.732,
+      "total_cost": 4968.54648,
+      "market_value": 5196.0,
+      "profit_pct": 4.59,
+      "profit_amount": 227.45,
+      "peak_price": 1.732,
+      "add_count": 0
+    },
+    "000811": {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "buy_date": "2026-06-30",
+      "buy_price": 50.56,
+      "shares": 200,
+      "current_price": 50.3,
+      "total_cost": 10117.10112,
+      "market_value": 10060.0,
+      "profit_pct": -0.51,
+      "profit_amount": -57.1,
+      "peak_price": 50.56,
+      "add_count": 0
+    },
+    "600584": {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "buy_date": "2026-06-30",
+      "buy_price": 101.29,
+      "shares": 100,
+      "current_price": 99.83,
+      "total_cost": 10134.10129,
+      "market_value": 9983.0,
+      "profit_pct": -1.44,
+      "profit_amount": -151.1,
+      "peak_price": 101.29,
+      "add_count": 0
+    },
+    "600667": {
+      "stock_code": "600667",
+      "stock_name": "太极实业",
+      "buy_date": "2026-06-30",
+      "buy_price": 27.96,
+      "shares": 300,
+      "current_price": 27.0,
+      "total_cost": 8393.08388,
+      "market_value": 8100.0,
+      "profit_pct": -3.43,
+      "profit_amount": -293.08,
+      "peak_price": 27.96,
+      "add_count": 0
+    }
+  },
+  "trades": [
+    {
+      "stock_code": "000063",
+      "stock_name": "中兴通讯",
+      "action": "加仓",
+      "date": "2026-06-22",
+      "price": 39.38,
+      "shares": 700,
+      "reason": "评分85分·买30%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000977",
+      "stock_name": "浪潮信息",
+      "action": "加仓",
+      "date": "2026-06-22",
+      "price": 66.21,
+      "shares": 100,
+      "reason": "评分58分·买15%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600487",
+      "stock_name": "亨通光电",
+      "action": "加仓",
+      "date": "2026-06-23",
+      "price": 117.63,
+      "shares": 100,
+      "reason": "评分74分·买30%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "加仓",
+      "date": "2026-06-23",
+      "price": 45.45,
+      "shares": 100,
+      "reason": "评分58分·买15%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "加仓",
+      "date": "2026-06-24",
+      "price": 1.8,
+      "shares": 2700,
+      "reason": "评分64分·买10%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出",
+      "date": "2026-06-24",
+      "price": 44.11,
+      "shares": 100,
+      "reason": "跳水2.2%自动卖出",
+      "profit_pct": -3.26,
+      "profit_amount": -148.5
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "加仓",
+      "date": "2026-06-24",
+      "price": 45.26,
+      "shares": 100,
+      "reason": "评分88分·买15%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600487",
+      "stock_name": "亨通光电",
+      "action": "卖出",
+      "date": "2026-06-24",
+      "price": 116.51,
+      "shares": 100,
+      "reason": "跳水3.1%自动卖出",
+      "profit_pct": -1.14,
+      "profit_amount": -133.89
+    },
+    {
+      "stock_code": "002156",
+      "stock_name": "通富微电",
+      "action": "加仓",
+      "date": "2026-06-24",
+      "price": 69.98,
+      "shares": 100,
+      "reason": "深V反弹2.3%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600105",
+      "stock_name": "永鼎股份",
+      "action": "加仓",
+      "date": "2026-06-24",
+      "price": 67.28,
+      "shares": 100,
+      "reason": "深V反弹2.0%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "加仓",
+      "date": "2026-06-24",
+      "price": 46.92,
+      "shares": 100,
+      "reason": "第1次加仓·评分68",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000977",
+      "stock_name": "浪潮信息",
+      "action": "卖出",
+      "date": "2026-06-24",
+      "price": 63.5,
+      "shares": 100,
+      "reason": "评分36分·回避",
+      "profit_pct": -4.34,
+      "profit_amount": -287.48
+    },
+    {
+      "stock_code": "000063",
+      "stock_name": "中兴通讯",
+      "action": "卖出",
+      "date": "2026-06-24",
+      "price": 37.42,
+      "shares": 700,
+      "reason": "尾盘止损-5.1%",
+      "profit_pct": -5.12,
+      "profit_amount": -1412.17
+    },
+    {
+      "stock_code": "000063",
+      "stock_name": "中兴通讯",
+      "action": "加仓",
+      "date": "2026-06-25",
+      "price": 38.22,
+      "shares": 100,
+      "reason": "评分67分·买6%",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002156",
+      "stock_name": "通富微电",
+      "action": "加仓",
+      "date": "2026-06-25",
+      "price": 75.83,
+      "shares": 100,
+      "reason": "第1次加仓·评分71",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600105",
+      "stock_name": "永鼎股份",
+      "action": "加仓",
+      "date": "2026-06-25",
+      "price": 69.56,
+      "shares": 100,
+      "reason": "第1次加仓·评分69",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 52.58,
+      "shares": 66,
+      "reason": "止盈14.0%卖1/3",
+      "profit_pct": 13.68,
+      "profit_amount": 416.5
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 52.9,
+      "shares": 44,
+      "reason": "止盈14.7%卖1/3",
+      "profit_pct": 14.29,
+      "profit_amount": 290.07
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 53.25,
+      "shares": 30,
+      "reason": "止盈15.4%卖1/3",
+      "profit_pct": 14.93,
+      "profit_amount": 206.67
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 53.52,
+      "shares": 20,
+      "reason": "止盈16.0%卖1/3",
+      "profit_pct": 15.33,
+      "profit_amount": 141.51
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 52.65,
+      "shares": 13,
+      "reason": "止盈14.1%卖1/3",
+      "profit_pct": 13.16,
+      "profit_amount": 78.93
+    },
+    {
+      "stock_code": "002156",
+      "stock_name": "通富微电",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 77.09,
+      "shares": 100,
+      "reason": "评分35分·减半",
+      "profit_pct": 5.49,
+      "profit_amount": 400.64
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 53.01,
+      "shares": 9,
+      "reason": "止盈14.9%卖1/3",
+      "profit_pct": 13.57,
+      "profit_amount": 56.34
+    },
+    {
+      "stock_code": "002156",
+      "stock_name": "通富微电",
+      "action": "卖出",
+      "date": "2026-06-25",
+      "price": 77.22,
+      "shares": 100,
+      "reason": "评分35分·回避",
+      "profit_pct": 5.67,
+      "profit_amount": 413.63
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 52.93,
+      "shares": 6,
+      "reason": "止盈14.7%卖1/3",
+      "profit_pct": 12.79,
+      "profit_amount": 35.42
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 52.62,
+      "shares": 4,
+      "reason": "止盈14.1%卖1/3",
+      "profit_pct": 11.22,
+      "profit_amount": 20.71
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 53.48,
+      "shares": 2,
+      "reason": "止盈15.9%卖1/3",
+      "profit_pct": 10.37,
+      "profit_amount": 9.57
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "加仓",
+      "date": "2026-06-25",
+      "price": 1.86,
+      "shares": 7300,
+      "reason": "第1次加仓·评分79",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 53.1,
+      "shares": 2,
+      "reason": "止盈15.1%卖1/3",
+      "profit_pct": 9.55,
+      "profit_amount": 8.81
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 53.17,
+      "shares": 1,
+      "reason": "止盈15.3%卖1/3",
+      "profit_pct": 4.28,
+      "profit_amount": 1.98
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-06-25",
+      "price": 53.35,
+      "shares": 1,
+      "reason": "止盈15.7%卖1/3",
+      "profit_pct": 4.67,
+      "profit_amount": 2.16
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "加仓",
+      "date": "2026-06-25",
+      "price": 52.76,
+      "shares": 100,
+      "reason": "第2次加仓·评分73",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600105",
+      "stock_name": "永鼎股份",
+      "action": "卖出",
+      "date": "2026-06-26",
+      "price": 73.57,
+      "shares": 200,
+      "reason": "评分28分·回避",
+      "profit_pct": 7.3,
+      "profit_amount": 1000.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出",
+      "date": "2026-06-26",
+      "price": 54.36,
+      "shares": 102,
+      "reason": "评分28分·回避",
+      "profit_pct": 2.99,
+      "profit_amount": 160.79
+    },
+    {
+      "stock_code": "000063",
+      "stock_name": "中兴通讯",
+      "action": "卖出",
+      "date": "2026-06-25",
+      "price": 37.64,
+      "shares": 100,
+      "reason": "手动卖出·移除监控",
+      "profit_pct": -1.52,
+      "profit_amount": -71.84
+    },
+    {
+      "stock_code": "512480",
+      "stock_name": "半导体ETF国联安",
+      "action": "加仓",
+      "date": "2026-06-29",
+      "price": 2.83,
+      "shares": 1600,
+      "reason": "评分54分买入6%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600105",
+      "stock_name": "永鼎股份",
+      "action": "加仓",
+      "date": "2026-06-29",
+      "price": 64.94,
+      "shares": 100,
+      "reason": "评分67分买入15%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600522",
+      "stock_name": "中天科技",
+      "action": "加仓",
+      "date": "2026-06-29",
+      "price": 59.66,
+      "shares": 100,
+      "reason": "评分77分买入15%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002156",
+      "stock_name": "通富微电",
+      "action": "加仓",
+      "date": "2026-06-29",
+      "price": 72.88,
+      "shares": 100,
+      "reason": "评分82分买入15%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "卖出",
+      "date": "2026-06-29",
+      "price": 1.66,
+      "shares": 10000,
+      "reason": "ATR止损-9.7%(ATR=0.09)",
+      "profit_pct": -9.94,
+      "profit_amount": -1831.16
+    },
+    {
+      "stock_code": "600498",
+      "stock_name": "烽火通信",
+      "action": "加仓",
+      "date": "2026-06-29",
+      "price": 70.46,
+      "shares": 100,
+      "reason": "评分59分买入10%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "加仓",
+      "date": "2026-06-29",
+      "price": 1.66,
+      "shares": 3000,
+      "reason": "评分68分买入8%仓位·震荡·大盘跌",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "加仓",
+      "date": "2026-06-30",
+      "price": 50.56,
+      "shares": 200,
+      "reason": "开盘买入·评分60·预测看涨",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "action": "加仓",
+      "date": "2026-06-30",
+      "price": 101.29,
+      "shares": 100,
+      "reason": "开盘买入·评分52·预测看涨",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600667",
+      "stock_name": "太极实业",
+      "action": "加仓",
+      "date": "2026-06-30",
+      "price": 27.96,
+      "shares": 300,
+      "reason": "开盘买入·评分55·预测看涨",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    }
+  ],
+  "daily_values": [
+    {
+      "date": "2026-06-22",
+      "value": 99911.77
+    },
+    {
+      "date": "2026-06-23",
+      "value": 98826.6
+    },
+    {
+      "date": "2026-06-24",
+      "value": 99140.1
+    },
+    {
+      "date": "2026-06-25",
+      "value": 100657.12
+    },
+    {
+      "date": "2026-06-26",
+      "value": 100447.12
+    },
+    {
+      "date": "2026-06-29",
+      "value": 98302.97
+    },
+    {
+      "date": "2026-06-30",
+      "value": 99134.09
+    }
+  ]
+}

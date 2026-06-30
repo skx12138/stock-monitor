@@ -1,0 +1,60 @@
+﻿dedup:
+  cooldown_minutes: 0
+  enabled: true
+fund_flow:
+  alert_threshold: 30000000
+  enabled: true
+monitor:
+  interval_seconds: 30
+  lookback_days: 60
+notifier:
+  qmsg_key: ''
+  serverchan_key: ''
+  type: wecom
+  wecom_webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=43fc7d28-c0a7-42a2-bcef-adf0d3007c36
+price_alerts: null
+real_trader:
+  credentials_file: credentials.json
+  dry_run: true
+  enabled: false
+  headless: false
+  max_daily_trades: 10
+signals:
+  bollinger:
+    enabled: true
+    period: 20
+    std_dev: 2.0
+  ma_crossover:
+    enabled: true
+    ma_long: 20
+    ma_short: 5
+  macd:
+    enabled: true
+    fast: 12
+    signal: 9
+    slow: 26
+  rsi:
+    enabled: true
+    overbought: 70
+    oversold: 30
+    period: 14
+  volume_breakout:
+    enabled: true
+    ma_period: 5
+    ratio: 1.5
+stocks:
+  000811: 冰轮环境
+  '002156': 通富微电
+  002181: 粤 传 媒
+  '512480': 半导体ETF国联安
+  '515880': 通信ETF国泰
+  '600088': 中视传媒
+  '600105': 永鼎股份
+  '600183': 生益科技
+  '600487': 亨通光电
+  '600498': 烽火通信
+  '600522': 中天科技
+  '600584': 长电科技
+  '600667': 太极实业
+  '603501': 韦尔股份
+  '603629': 利通电子
