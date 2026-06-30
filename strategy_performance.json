@@ -1,0 +1,11 @@
+{
+  "records": [
+    {
+      "date": "2026-06-30",
+      "avg_return": 51.54,
+      "win_rate": 100.0,
+      "stock_count": 15
+    }
+  ],
+  "best_params": {}
+}
