@@ -697,6 +697,11 @@ def main():
                 if trade:
                     logger.info("评分交易: %s %s", trade.action, name)
                     profit_str = f" 盈亏{trade.profit_pct:+.2f}%" if trade.profit_pct else ""
+                    # 持仓信息
+                    pos_info = paper.portfolio.positions.get(trade.stock_code)
+                    pos_str = ""
+                    if pos_info:
+                        pos_str = f"\n📦 持仓: {pos_info.shares}股 均价{pos_info.buy_price:.2f} 市值{pos_info.shares*pos_info.current_price:.0f}元 总盈亏{pos_info.profit_pct:+.2f}%"
                     # 重点提醒交易（带时间+详细原因）
                     trade_icon = "🟢" if "买入" in trade.action or trade.action == "加仓" else ("🔴" if "卖出" in trade.action else "🔄")
                     profit_extra = f" {trade.profit_pct:+.2f}%" if trade.profit_pct else ""
@@ -706,7 +711,8 @@ def main():
                         f"价格: {trade.price:.2f}元\n"
                         f"数量: {trade.shares}股\n"
                         f"金额: {trade.price*trade.shares:.0f}元{profit_extra}\n"
-                        f"原因: {trade.reason}")
+                        f"原因: {trade.reason}"
+                        f"{pos_str}")
 
             paper.update_prices(current_prices)
 
