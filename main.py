@@ -22,8 +22,7 @@ from src.signals import (
     SignalDedup,
 )
 from src.dip_buy import (
-    scan_dip_buy_candidates, generate_dip_buy_report,
-    scan_close_buy_candidates, generate_close_buy_report,
+    scan_dip_buy_candidates, scan_close_buy_candidates,
 )
 from src.backtest import backtest_ma_crossover
 from src.papertrade import PaperTrading
@@ -206,6 +205,36 @@ def _generate_summary(config: dict, signals: list, paper: "PaperTrading") -> str
 
     lines.append("")
     lines.append(f"💡 明日 {date.today().strftime('%m/%d')} 开盘后自动恢复监控")
+
+    # ── 今日交易总结（合并到盘后总结） ──
+    try:
+        today_iso = date.today().isoformat()
+        today_trades = [t for t in paper.portfolio.trades if t.date == today_iso]
+        buys = [t for t in today_trades if "买入" in t.action or t.action == "加仓"]
+        sells = [t for t in today_trades if "卖出" in t.action]
+        lines.append("")
+        lines.append(f"**📊 今日交易**")
+        if buys:
+            lines.append(f"  🟢 买入 {len(buys)} 次")
+            for t in buys[:5]:
+                lines.append(f"     {t.stock_name} {t.price:.2f}元×{t.shares}股")
+        if sells:
+            lines.append(f"  🔴 卖出 {len(sells)} 次")
+            for t in sells[:5]:
+                p_icon = "🟢" if t.profit_pct >= 0 else "🔴"
+                lines.append(f"     {p_icon} {t.stock_name} {t.price:.2f}元 {t.profit_pct:+.2f}%")
+        if not buys and not sells:
+            lines.append("  今日无交易")
+        pos_cnt = len(paper.portfolio.positions)
+        if pos_cnt > 0:
+            lines.append(f"  📦 持仓 {pos_cnt} 只")
+            for pc, pp in paper.portfolio.positions.items():
+                p_i = "🟢" if pp.profit_pct >= 0 else "🔴"
+                lines.append(f"     {p_i} {pp.stock_name} {pp.current_price:.2f}元 {pp.profit_pct:+.2f}%")
+        pnl = (paper.portfolio.total_value - 100000) / 100000 * 100
+        lines.append(f"  💰 账户: {paper.portfolio.total_value:,.2f}元 ({pnl:+.2f}%)")
+    except Exception as e:
+        logger.debug("交易总结合并失败: %s", e)
 
     # ── 市场行情分析（盘后总结） ──
     try:
@@ -1098,37 +1127,6 @@ def main():
                 summary = _generate_summary(config, today_signals, paper)
                 if summary:
                     notify(config, "📋 今日盘后总结", summary)
-
-                # ── 每日交易总结 ──
-                try:
-                    today_str = date.today().isoformat()
-                    today_trades = [t for t in paper.portfolio.trades if t.date == today_str]
-                    buys = [t for t in today_trades if "买入" in t.action or t.action == "加仓"]
-                    sells = [t for t in today_trades if "卖出" in t.action]
-                    trade_lines = ["📊 **今日交易总结**", ""]
-                    if buys:
-                        trade_lines.append(f"  🟢 买入 {len(buys)} 次")
-                        for t in buys[:5]:
-                            trade_lines.append(f"     {t.stock_name} {t.price:.2f}元×{t.shares}股")
-                    if sells:
-                        trade_lines.append(f"  🔴 卖出 {len(sells)} 次")
-                        for t in sells[:5]:
-                            p_icon = "🟢" if t.profit_pct >= 0 else "🔴"
-                            trade_lines.append(f"     {p_icon} {t.stock_name} {t.price:.2f}元 {t.profit_pct:+.2f}%")
-                    if not buys and not sells:
-                        trade_lines.append("  今日无交易")
-                    trade_lines.append("")
-                    pos_count = len(paper.portfolio.positions)
-                    if pos_count > 0:
-                        trade_lines.append(f"  📦 持仓 {pos_count} 只")
-                        for p_code, p_pos in paper.portfolio.positions.items():
-                            p_icon = "🟢" if p_pos.profit_pct >= 0 else "🔴"
-                            trade_lines.append(f"     {p_icon} {p_pos.stock_name} {p_pos.current_price:.2f}元 {p_pos.profit_pct:+.2f}%")
-                    pnl = (paper.portfolio.total_value - 100000) / 100000 * 100
-                    trade_lines.append(f"  💰 账户收益: {paper.portfolio.total_value:,.2f}元 ({pnl:+.2f}%)")
-                    notify(config, "📊 今日交易总结", "\n".join(trade_lines))
-                except Exception as e:
-                    logger.debug("每日交易总结推送失败: %s", e)
 
                 # ── 策略回测（每日收盘后自动运行） ──
                 try:
