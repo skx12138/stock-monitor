@@ -232,7 +232,23 @@ class PaperTrading:
         pos = self.portfolio.positions.get(code)
         now = datetime.now()
 
-        # ── 板块轮动过滤：根据板块涨跌调整买入意愿 ──
+        # ── 量价形态调节（放量上涨加仓，放量下跌减仓） ──
+        vol_adj = 1.0
+        try:
+            vol_detail = score_info.get("details", {}).get("成交量", {})
+            vol_desc = vol_detail.get("desc", "")
+            if "放量上涨" in vol_desc:
+                vol_adj = 1.2  # 放量上涨，加2成仓位
+            elif "缩量回调" in vol_desc or "惜售" in vol_desc:
+                vol_adj = 1.1  # 缩量回调/惜售，加1成
+            elif "放量下跌" in vol_desc or "资金出逃" in vol_desc:
+                vol_adj = 0.4  # 放量下跌，打4折
+            elif "缩量上涨" in vol_desc and "动力不足" in vol_desc:
+                vol_adj = 0.6  # 缩量上涨动力不足，打6折
+            elif "无人参与" in vol_desc:
+                vol_adj = 0.3  # 极度缩量无人参与，打3折
+        except:
+            pass
         sector_ok = True
         sector_adj = 1.0
         try:
@@ -530,7 +546,7 @@ class PaperTrading:
 
         # ── 买入（动态仓位 + 大盘/预测过滤 + 情绪调节 + 日内趋势） ──
         if not trade:
-            ratio = get_ratio(score) * chase_penalty * sentiment_adj * intraday_adj * sector_adj * morning_adj
+            ratio = get_ratio(score) * chase_penalty * sentiment_adj * intraday_adj * sector_adj * morning_adj * vol_adj
             if ratio > 0 and code not in self.portfolio.positions and sector_ok:
                 # 跌势时减半仓位+需看涨预测
                 if market_declining:
@@ -597,7 +613,7 @@ class PaperTrading:
                                         logger.info("日K线趋势向下，%s 第%s次加仓减半", name, idx + 1)
                                         add_ratios[idx] *= 0.5
                                 if not add_skip:
-                                    add_ratio = add_ratios[idx] * sentiment_adj * intraday_adj * sector_adj * morning_adj
+                                    add_ratio = add_ratios[idx] * sentiment_adj * intraday_adj * sector_adj * morning_adj * vol_adj
                                     trade = self._buy_position(code, name, current_price, add_ratio,
                                         f"第{idx+1}次加仓·评分{score}", add_count=pos.add_count + 1)
 
@@ -627,7 +643,7 @@ class PaperTrading:
                                     add_chg = score_info.get("change_pct", 0)
                                     logger.info("回踩均线加仓: %s MA10=%.2f MA20=%.2f 现价=%.2f 偏离MA10=%.1f%% 评分=%s",
                                                 name, ma10, ma20, current_price, dev_ma10, score)
-                                    adj_ratio = round(0.10 * sentiment_adj * intraday_adj * sector_adj * morning_adj, 2)
+                                    adj_ratio = round(0.10 * sentiment_adj * intraday_adj * sector_adj * morning_adj * vol_adj, 2)
                                     if not ma20_rising:
                                         adj_ratio *= 0.5  # MA20向下，趋势不强，减半
                                     trade = self._buy_position(code, name, current_price, max(adj_ratio, 0.03),
@@ -645,7 +661,7 @@ class PaperTrading:
                                 if vol_ratio >= 1.5 and not (prediction and prediction["direction"] == "看跌"):
                                     logger.info("放量突破加仓: %s 涨幅%.1f%% 量比%.1f 评分=%s",
                                                 name, intraday_chg, vol_ratio, score)
-                                    adj_ratio = round(0.10 * sentiment_adj * intraday_adj * sector_adj * morning_adj, 2)
+                                    adj_ratio = round(0.10 * sentiment_adj * intraday_adj * sector_adj * morning_adj * vol_adj, 2)
                                     trade = self._buy_position(code, name, current_price, max(adj_ratio, 0.03),
                                         f"放量突破加仓·评分{score}", add_count=pos.add_count + 1)
 
@@ -713,7 +729,7 @@ class PaperTrading:
                                     logger.info("大盘跌势无明确看涨信号，跳过 %s 摊平", name)
                                     add_skip = True
                             if not add_skip:
-                                trade = self._buy_position(code, name, current_price, ratio,
+                                trade = self._buy_position(code, name, current_price, ratio * vol_adj,
                                     f"亏损{loss:.0f}%摊平·{drop_analysis}·评分{score}·预测{prediction['direction'] if prediction else '无'}", add_count=pos.add_count + 1)
 
                 # ── MA趋势加仓：MA5上穿MA20(金叉)确认趋势 + MA20方向向上 ──
@@ -732,7 +748,7 @@ class PaperTrading:
                         # 条件：金叉确认 或 (MA20上升+价格在MA5上方)
                         if (golden_cross or (ma20_up and price_above_ma5)) and score >= 50:
                             if not (prediction and prediction["direction"] == "看跌"):
-                                add_ma_ratio = round(0.08 * sector_adj * morning_adj, 2)
+                                add_ma_ratio = round(0.08 * sector_adj * morning_adj * vol_adj, 2)
                                 logger.info("MA趋势加仓: %s 金叉=%s MA20向上=%s 评分=%s", name, golden_cross, ma20_up, score)
                                 trade = self._buy_position(code, name, current_price, add_ma_ratio,
                                     f"MA趋势加仓·金叉{'是' if golden_cross else '否'}·评分{score}", add_count=pos.add_count + 1)
