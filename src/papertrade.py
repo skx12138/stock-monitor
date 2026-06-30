@@ -173,7 +173,7 @@ class PaperTrading:
         score = score_info.get("score", 0)
         action = score_info.get("action", "")
         now = datetime.now()
-
+        
         # 加载本股票的个性化策略参数
         try:
             from src.optimizer import get_stock_params
@@ -185,6 +185,41 @@ class PaperTrading:
             buy_th = 60
             sell_th = 45
             stop_loss_pct = 8
+
+        # ── 风控1：当日总亏损超过8%时暂停所有新开仓 ──
+        daily_loss_limit = -8.0
+        current_day_ret = (self.portfolio.total_value - 100000) / 100000 * 100
+        if current_day_ret < daily_loss_limit and code not in self.portfolio.positions:
+            logger.warning("风控: 当日总亏损%.1f%%超过阈值%.0f%%，暂停新开仓 %s", current_day_ret, daily_loss_limit, name)
+            return None
+
+        # ── 风控2：大盘暴跌(>3%)时自动减半仓 ──
+        try:
+            from src.scoring import get_market_sentiment
+            s_lv, s_label = get_market_sentiment()
+            if s_lv == -2:  # 恐慌
+                if code in self.portfolio.positions:
+                    pos = self.portfolio.positions.get(code)
+                    if pos and pos.shares > 100:
+                        sell_shares = pos.shares // 2
+                        if sell_shares >= 100:
+                            logger.warning("风控: 市场恐慌[%s]，%s 自动减半仓%d股", s_label, name, sell_shares)
+                            return self._sell_partial(code, current_price, sell_shares, f"恐慌减半·{s_label}")
+        except: pass
+
+        # ── 风控3：连续3日下跌暂停加仓 ──
+        consecutive_days_down = 0
+        if kline is not None and len(kline) >= 5 and code in self.portfolio.positions:
+            try:
+                c_closes = kline["close"].values.astype(float)
+                for i in range(1, min(6, len(c_closes))):
+                    if c_closes[-i] < c_closes[-i-1]:
+                        consecutive_days_down += 1
+                    else:
+                        break
+                if consecutive_days_down >= 3 and code in self.portfolio.positions:
+                    logger.info("风控: %s 连续%d日下跌，跳过加仓", name, consecutive_days_down)
+            except: pass
 
         last_trade = self.trade_dedup.get(code)
         if last_trade:
@@ -521,7 +556,7 @@ class PaperTrading:
                         add_count=0)
             elif ratio > 0 and code in self.portfolio.positions and score >= 65:
                 pos = self.portfolio.positions.get(code)
-                if pos and (pos.profit_pct > 0 or (pos.profit_pct > -5 and pos.add_count < 2)):  # 盈利或浅亏(<5%)允许加仓
+                if pos and (pos.profit_pct > 0 or (pos.profit_pct > -5 and pos.add_count < 2)) and consecutive_days_down < 3:  # 盈利或浅亏(<5%)允许加仓
                     # 金字塔加仓：次数越多，加的越少，门槛越高
                     add_ratios = [0.15, 0.10, 0.05]
                     add_scores = [55, 60, 65]
@@ -567,7 +602,7 @@ class PaperTrading:
                                         f"第{idx+1}次加仓·评分{score}", add_count=pos.add_count + 1)
 
                 # ── 回踩均线加仓：价格回踩MA10/MA20不破反弹时加仓（浅亏也允许） ──
-                if not trade and pos and (pos.profit_pct > 0 or (pos.profit_pct > -3 and deep_drop)) and pos.add_count < 3:
+                if not trade and pos and (pos.profit_pct > 0 or (pos.profit_pct > -3 and deep_drop)) and pos.add_count < 3 and consecutive_days_down < 3:
                     if kline is not None and len(kline) > 20:
                         closes_arr = kline["close"].values.astype(float)
                         from src.signals import _sma
@@ -599,7 +634,7 @@ class PaperTrading:
                                         f"回踩MA10加仓·评分{score}", add_count=pos.add_count + 1)
 
                 # ── 放量突破加仓：涨幅>3%+放量>1.5倍+评分↑ ──
-                if not trade and pos and pos.profit_pct > 0 and pos.add_count < 3:
+                if not trade and pos and pos.profit_pct > 0 and pos.add_count < 3 and consecutive_days_down < 3:
                     intraday_chg = score_info.get("change_pct", 0)
                     if kline is not None and intraday_chg >= 3 and score >= 55:
                         volumes_arr = kline["volume"].values.astype(float) if "volume" in kline.columns else np.array([])
