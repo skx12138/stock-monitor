@@ -472,9 +472,7 @@ def main():
                 dip_buy_done_today = True
                 logger.info("开始尾盘低吸扫描...")
                 candidates = scan_dip_buy_candidates(max_price=150, tech_only=True)
-                report = generate_dip_buy_report(candidates, max_price=150, tech_only=True)
-                if report:
-                    notify(config, "📋 尾盘低吸机会扫描", report)
+                # 尾盘低吸推送已取消
                 # 同时推送模拟账户报告
                 acc_report = paper.generate_report()
                 if acc_report:
