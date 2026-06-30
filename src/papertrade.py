@@ -631,6 +631,22 @@ class PaperTrading:
                             elif drop_analysis == "持续下跌中":
                                 ratio *= 0.5  # 持续下跌只补一半
                                 logger.info("暴跌分析[%s]，%s 减半摊平至%.0f%%", drop_analysis, name, ratio*100)
+                        # ── 开盘暴跌策略(跌超7%)：预测看涨则抄底，预测看跌但超卖也抄底 ──
+                        if heavy_drop or deep_drop:
+                            from src.signals import _calc_rsi
+                            rsi_drop = None
+                            if kline is not None and len(kline) > 20:
+                                c_arr = kline["close"].values.astype(float)
+                                rsi_drop = _calc_rsi(c_arr, 14)
+                            if prediction and prediction["direction"] == "看涨":
+                                ratio = min(ratio * 2, 0.10)  # 预测看涨，加倍抄底
+                                logger.info("开盘暴跌+预测看涨(%d%%)，%s 加仓至%.0f%%抄底", prediction["confidence"], name, ratio*100)
+                            elif prediction and prediction["direction"] == "看跌" and rsi_drop is not None and rsi_drop < 30:
+                                ratio = min(ratio * 1.2, 0.06)  # 看跌但超卖，轻仓试错
+                                logger.info("开盘暴跌+RSI%.0f超卖，%s 轻仓试错%.0f%%", rsi_drop, name, ratio*100)
+                            elif prediction and prediction["direction"] == "看跌" and deep_drop:
+                                ratio *= 0.5
+                                logger.info("开盘暴跌+预测看跌，%s 减半等待%.0f%%", name, ratio*100)
                         if ratio >= 0.03 and current_price < pos.buy_price * 0.97:
                             # 大盘+预测检查（摊平需要明确看涨）
                             add_skip = False
