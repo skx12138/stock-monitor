@@ -1131,17 +1131,25 @@ def main():
                 try:
                     from src.backtest import backtest_scoring_strategy
                     from src.performance import record_daily_result
-                    from src.optimizer import auto_optimize, get_param_summary, refresh_strategies
+                    from src.optimizer import auto_optimize, get_param_summary, refresh_strategies, get_stock_params, STRATEGY_TEMPLATES
                     bt_lines = []
                     bt_total = 0.0
                     bt_count = 0
                     bt_wins = 0
+                    # 获取策略分类
+                    try:
+                        strat_map = refresh_strategies()
+                    except:
+                        strat_map = {}
                     for bt_code, bt_name in stocks.items():
                         bt_kline = fetch_kline(bt_code, 365)
                         if bt_kline is not None:
                             bt_r = backtest_scoring_strategy(bt_code, bt_name, bt_kline)
                             bt_icon = "+" if bt_r.total_return > 0 else ""
-                            bt_lines.append(f"  {bt_icon} {bt_name}({bt_code}): {bt_r.total_return:+.1f}% 胜率{bt_r.win_rate:.0f}%")
+                            s_info = strat_map.get(bt_code, {})
+                            s_type = s_info.get("strategy", "稳健")
+                            s_mark = {"激进": "🚀", "稳健": "⚖️", "保守": "🛡️"}.get(s_type, "❓")
+                            bt_lines.append(f"  {s_mark} {bt_name}({bt_code}): {bt_r.total_return:+.1f}% 胜率{bt_r.win_rate:.0f}%  {s_type}")
                             bt_total += bt_r.total_return
                             bt_count += 1
                             if bt_r.total_return > 0:
