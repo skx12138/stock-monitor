@@ -702,11 +702,6 @@ def main():
                     pos_str = ""
                     if pos_info:
                         pos_str = f"\n📦 持仓: {pos_info.shares}股 均价{pos_info.buy_price:.2f} 市值{pos_info.shares*pos_info.current_price:.0f}元 总盈亏{pos_info.profit_pct:+.2f}%"
-                    # 总持仓概况
-                    total_positions = len(paper.portfolio.positions)
-                    pos_value = paper.portfolio.total_value - paper.portfolio.cash
-                    total_ret = (paper.portfolio.total_value - 100000) / 100000 * 100
-                    summary_str = f"\n📊 总账户: 持仓{total_positions}只 市值{pos_value:.0f}元 总收益{total_ret:+.2f}%"
                     # 重点提醒交易（带时间+详细原因）
                     trade_icon = "🟢" if "买入" in trade.action or trade.action == "加仓" else ("🔴" if "卖出" in trade.action else "🔄")
                     profit_extra = f" {trade.profit_pct:+.2f}%" if trade.profit_pct else ""
@@ -717,10 +712,32 @@ def main():
                         f"数量: {trade.shares}股\n"
                         f"金额: {trade.price*trade.shares:.0f}元{profit_extra}\n"
                         f"原因: {trade.reason}"
-                        f"{pos_str}"
-                        f"{summary_str}")
+                        f"{pos_str}")
 
             paper.update_prices(current_prices)
+
+            # ── 总持仓概况推送（每30分钟一次） ──
+            summary_key = f"acct_{now.strftime('%Y%m%d_%H')}_{now.minute // 30}"
+            if summary_key not in intraday_alerts:
+                intraday_alerts.add(summary_key)
+                total_positions = len(paper.portfolio.positions)
+                if total_positions > 0:
+                    pos_value = paper.portfolio.total_value - paper.portfolio.cash
+                    cash_val = paper.portfolio.cash
+                    total_ret = (paper.portfolio.total_value - 100000) / 100000 * 100
+                    pos_lines = [f"📊 **账户概况** · {now.strftime('%H:%M')}", ""]
+                    pos_lines.append(f"  💰 总资产: {paper.portfolio.total_value:,.2f}元")
+                    pos_lines.append(f"  📦 持仓: {total_positions}只 | 市值{pos_value:,.0f}元")
+                    pos_lines.append(f"  💳 现金: {cash_val:,.2f}元")
+                    pos_lines.append(f"  📈 总收益: {total_ret:+.2f}%")
+                    if total_positions > 0:
+                        pos_lines.append("")
+                        pos_lines.append(f"  **持仓明细:**")
+                        for pcode, ppos in sorted(paper.portfolio.positions.items(), key=lambda x: x[1].market_value, reverse=True):
+                            pct = ppos.profit_pct
+                            icon_p = "🟢" if pct >= 0 else "🔴"
+                            pos_lines.append(f"  {icon_p} {ppos.stock_name}({pcode}): {ppos.shares}股 {ppos.current_price:.2f}元 {pct:+.2f}%")
+                    notify(config, "📊 账户概况", "\n".join(pos_lines))
 
             # ── 检测单股异动，有变动时单独推送 ──
             if stock_snapshots and last_snapshot:
