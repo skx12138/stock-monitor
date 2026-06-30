@@ -449,6 +449,8 @@ def main():
                         t = bullish + bearish + neutral
                         ti = "\U0001f4c8" if bullish >= bearish else "\U0001f4c9"
                         pre_lines.insert(1, f"{ti} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只")
+                    # 先推送开盘前分析
+                    notify(config, "\U0001f305 开盘前分析", "\n".join(pre_lines))
                     # ── 开盘前自动交易（基于昨日收盘数据） ──
                     trade_lines = []
                     for t_code, t_name in stocks.items():
@@ -480,16 +482,9 @@ def main():
                                 if sell_t:
                                     trade_lines.append(f"  \U0001f534 卖出 {t_name}({t_code}) {t_price:.2f}元")
                     if trade_lines:
-                        pre_lines.append("")
-                        pre_lines.append("\U0001f504 **开盘自动交易**")
-                        pre_lines.extend(trade_lines)
-                    # 推荐关注
-                    pre_lines.append("")
-                    pre_lines.append("\U0001f4a1 **今日关注**")
-                    pre_lines.append("  \u2022 评分\u226545+预测看涨可买入")
-                    pre_lines.append("  \u2022 已持仓评分<35需卖出")
-                    pre_lines.append("  \u2022 9:30开盘后自动监控")
-                    notify(config, "\U0001f305 开盘前分析", "\n".join(pre_lines))
+                        trade_notify = ["\U0001f504 **开盘自动交易**", ""]
+                        trade_notify.extend(trade_lines)
+                        notify(config, "\U0001f504 开盘自动交易", "\n".join(trade_notify))
                 except Exception as e:
                     logger.debug("开盘前分析失败: %s", e)
 
