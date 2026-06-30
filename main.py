@@ -217,12 +217,12 @@ def _generate_summary(config: dict, signals: list, paper: "PaperTrading") -> str
         if buys:
             lines.append(f"  🟢 买入 {len(buys)} 次")
             for t in buys[:5]:
-                lines.append(f"     {t.stock_name} {t.price:.2f}元×{t.shares}股")
+                lines.append(f"     {t.stock_name}({t.stock_code}) {t.price:.2f}元×{t.shares}股")
         if sells:
             lines.append(f"  🔴 卖出 {len(sells)} 次")
             for t in sells[:5]:
                 p_icon = "🟢" if t.profit_pct >= 0 else "🔴"
-                lines.append(f"     {p_icon} {t.stock_name} {t.price:.2f}元 {t.profit_pct:+.2f}%")
+                lines.append(f"     {p_icon} {t.stock_name}({t.stock_code}) {t.price:.2f}元 {t.profit_pct:+.2f}%")
         if not buys and not sells:
             lines.append("  今日无交易")
         pos_cnt = len(paper.portfolio.positions)
@@ -230,7 +230,7 @@ def _generate_summary(config: dict, signals: list, paper: "PaperTrading") -> str
             lines.append(f"  📦 持仓 {pos_cnt} 只")
             for pc, pp in paper.portfolio.positions.items():
                 p_i = "🟢" if pp.profit_pct >= 0 else "🔴"
-                lines.append(f"     {p_i} {pp.stock_name} {pp.current_price:.2f}元 {pp.profit_pct:+.2f}%")
+                lines.append(f"     {p_i} {pp.stock_name}({pc}) {pp.current_price:.2f}元 {pp.profit_pct:+.2f}%")
         pnl = (paper.portfolio.total_value - 100000) / 100000 * 100
         lines.append(f"  💰 账户: {paper.portfolio.total_value:,.2f}元 ({pnl:+.2f}%)")
     except Exception as e:
