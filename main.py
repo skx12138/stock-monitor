@@ -1,0 +1,1229 @@
+"""
+A股行情监控主程序
+支持多信号检测 + 资金流向 + 价格预警 + 行情简报 + 多通道通知 + 去重
+"""
+import logging
+import os
+import sys
+import time
+from datetime import datetime, date, time as dt_time
+from typing import Optional
+
+import yaml
+
+import numpy as np
+
+from src.fetcher import fetch_realtime, fetch_kline, fetch_fund_flow
+from src.signals import (
+    check_signals,
+    check_price_alerts,
+    generate_fund_flow_signal,
+    generate_status_report,
+    SignalDedup,
+)
+from src.dip_buy import (
+    scan_dip_buy_candidates, generate_dip_buy_report,
+    scan_close_buy_candidates, generate_close_buy_report,
+)
+from src.backtest import backtest_ma_crossover
+from src.papertrade import PaperTrading
+from src.scoring import compute_score
+from src.sectors import get_sector_tag
+from src.notifier import notify, notify_signal, notify_startup
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+
+def load_config(path: str = "config.yaml") -> Optional[dict]:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error("加载配置文件失败: %s", e)
+        return None
+
+
+def is_trading_time() -> bool:
+    now = datetime.now()
+    if now.weekday() >= 5:
+        return False
+    t = now.time()
+    return (
+        (dt_time(9, 30) <= t <= dt_time(11, 30))
+        or (dt_time(13, 0) <= t <= dt_time(15, 0))
+    )
+
+
+def run_once(
+    config: dict,
+    dedup: SignalDedup,
+    briefed_today: set,
+    today: date,
+) -> list:
+    """执行一轮监控
+
+    流程:
+      1. 每只股票首检 → 推送「行情简报」（含资金流向）
+      2. 实时检测 → 推送「触发信号」（金叉/死叉/突破等）
+      3. 检查价格预警 + 资金流向异动
+    """
+    stocks = config.get("stocks", {})
+    lookback_days = config.get("monitor", {}).get("lookback_days", 60)
+    all_signals = []
+    briefing_parts = []   # 收集所有股票的行情简报
+
+    for code, name in stocks.items():
+        logger.info("检查 %s (%s)...", name or code, code)
+
+        # 1. 实时行情
+        realtime = fetch_realtime(code)
+        if realtime is None:
+            continue
+
+        price = realtime["price"]
+        display_name = realtime.get("name") or name or code
+
+        # 2. 历史K线
+        kline = fetch_kline(code, days=lookback_days)
+        if kline is None:
+            continue
+
+        # 3. 资金流向
+        fund_flow = fetch_fund_flow(code)
+
+        # 4. 收集行情简报（合并推送）
+        key = (code, today)
+        if key not in briefed_today:
+            briefed_today.add(key)
+            report = generate_status_report(
+                stock_code=code,
+                stock_name=display_name,
+                kline_df=kline,
+                latest_price=price,
+                realtime=realtime,
+                config=config,
+                fund_flow=fund_flow,
+            )
+            if report:
+                rlines = report.split("\n")
+                price_line = [l for l in rlines if "元" in l]
+                trend_line = [l for l in rlines if "趋势" in l and "短期" in l]
+                score_line = [l for l in rlines if "总体" in l or "建议" in l]
+                brief_parts = []
+                if price_line: brief_parts.append(price_line[0])
+                if trend_line: brief_parts.append(trend_line[0])
+                if score_line: brief_parts.append(score_line[0])
+                briefing_parts.append(f"📌 {display_name}({code})")
+                for bp in brief_parts:
+                    briefing_parts.append(f"   {bp.strip()}")
+                briefing_parts.append("")
+
+        # 5. 技术指标信号检测
+        signals = check_signals(
+            stock_code=code,
+            stock_name=display_name,
+            kline_df=kline,
+            latest_price=price,
+            config=config,
+            dedup=dedup,
+            change_pct=realtime.get("change_pct", 0.0),
+        )
+
+        for sig in signals:
+            logger.info("触发信号: %s %s", display_name, sig.signal_label)
+            all_signals.append(sig)
+
+        # 6. 价格预警
+        price_signals = check_price_alerts(
+            stock_code=code,
+            stock_name=display_name,
+            latest_price=price,
+            config=config,
+            dedup=dedup,
+        )
+        for sig in price_signals:
+            logger.info("价格预警: %s", sig.signal_label)
+            all_signals.append(sig)
+
+        # 7. 资金流向异动
+        ff_signal = generate_fund_flow_signal(
+            stock_code=code, stock_name=display_name,
+            latest_price=price, fund_flow=fund_flow,
+            config=config, dedup=dedup,
+        )
+        if ff_signal:
+            logger.info("资金流向信号: %s", ff_signal.signal_label)
+            all_signals.append(ff_signal)
+            if dedup:
+                dedup.mark_sent(code, "fund_flow")
+
+    return all_signals, briefing_parts
+
+
+def _generate_summary(config: dict, signals: list, paper: "PaperTrading") -> str:
+    """生成盘后总结报告"""
+    from datetime import date
+    today_str = date.today().strftime("%m/%d")
+    stocks = config.get("stocks", {})
+
+    lines = []
+    lines.append(f"📋 **今日盘后总结** · {today_str}")
+    lines.append("")
+
+    # 股票今日表现
+    lines.append(f"**📈 持仓表现**")
+    for code, name in stocks.items():
+        realtime = fetch_realtime(code)
+        if realtime:
+            chg = realtime.get("change_pct", 0)
+            price = realtime["price"]
+            icon = "📈" if chg > 0 else ("📉" if chg < 0 else "➖")
+            display = realtime.get("name") or name
+            lines.append(f"  {icon} {display}({code})  {price:.2f}元  {chg:+.2f}%")
+    lines.append("")
+
+    # 今日信号
+    today_sigs = [s for s in signals if hasattr(s, 'signal_label')]
+    if today_sigs:
+        lines.append(f"**🚨 今日信号（{len(today_sigs)}个）**")
+        for s in today_sigs[-10:]:
+            icon = "🔴" if "买入" in s.suggestion or "多头" in s.direction else "🟢"
+            lines.append(f"  {icon} {s.stock_name} {s.signal_label}  {s.suggestion}")
+        lines.append("")
+
+    # 模拟账户
+    paper_report = paper.generate_report()
+    if paper_report:
+        # 提取关键数据
+        for line in paper_report.split("\n"):
+            if "总资产" in line or "总收益" in line or "现金" in line or "历史统计" in line or "胜率" in line:
+                lines.append(f"  {line.strip()}")
+
+    lines.append("")
+    lines.append(f"💡 明日 {date.today().strftime('%m/%d')} 开盘后自动恢复监控")
+
+    # ── 市场行情分析（盘后总结） ──
+    try:
+        from src.scoring import get_market_sentiment, get_intraday_trend
+        from src.fetcher import fetch_sector_performance, fetch_market_index
+        
+        idx = fetch_market_index("000001")
+        if idx:
+            idx_chg = idx.get("change_pct", 0)
+            idx_icon = "📈" if idx_chg > 0 else "📉"
+            lines.append("")
+            lines.append(f"**📊 市场概况**")
+            lines.append(f"  上证指数: {idx.get('price', 0):.0f} {idx_icon} {idx_chg:+.2f}%")
+        
+        s_level, s_label = get_market_sentiment()
+        t_desc, _ = get_intraday_trend()
+        lines.append(f"  市场情绪: {s_label}")
+        lines.append(f"  日内走势: {t_desc}")
+        
+        # 板块TOP3
+        sectors = fetch_sector_performance()
+        if sectors:
+            lines.append(f"  **板块TOP3:**")
+            for s in sectors[:3]:
+                s_icon = "📈" if s["change_pct"] > 0 else "📉"
+                lines.append(f"    {s_icon} {s['name']} {s['change_pct']:+.2f}%")
+            lines.append(f"  **板块BOTTOM3:**")
+            for s in sectors[-3:]:
+                s_icon = "📈" if s["change_pct"] > 0 else "📉"
+                lines.append(f"    {s_icon} {s['name']} {s['change_pct']:+.2f}%")
+    except Exception as e:
+        logger.debug("市场行情分析失败: %s", e)
+
+    return "\n".join(lines).strip()
+
+
+def main():
+    config = load_config()
+    if not config:
+        sys.exit(1)
+
+    stocks = config.get("stocks", {})
+    if not stocks:
+        logger.warning("股票池为空！请在 config.yaml 中配置自选股")
+        sys.exit(0)
+
+    dedup = SignalDedup(enabled=config.get("dedup", {}).get("enabled", True))
+    briefed_today: set[tuple[str, date]] = set()
+    dip_buy_done_today = False
+    close_buy_done_today = False  # 尾盘买入是否已完成
+    pred_done_today = False      # 明日预测是否已推送
+    premarket_done = False       # 开盘前分析是否已推送
+    startup_done = False         # 启动通知是否已推送
+    summary_done_today = False   # 盘后总结是否已发
+    today_signals = []           # 今日信号记录
+    cycle_count = 0
+    last_snapshot: dict = {}     # 上一轮各股状态 {code: (price, score)}
+    paper = PaperTrading(initial_cash=100000)
+
+    # 盘中价格追踪（用于检测跳水/深V）
+    price_history: dict[str, list] = {}  # code -> [(time, price)]
+    intraday_alerts: set = set()         # 已推送的异动预警
+
+    interval = config.get("monitor", {}).get("interval_seconds", 60)
+    last_date = datetime.now().date()
+
+    signals_cfg = config.get("signals", {})
+    enabled_signals = [k for k, v in signals_cfg.items() if isinstance(v, dict) and v.get("enabled")]
+    extras = []
+    if config.get("price_alerts"):
+        extras.append("价格预警")
+    if config.get("fund_flow", {}).get("enabled"):
+        extras.append("资金流向")
+    extras.append("尾盘低吸(科技≤150元)")
+    extras.append("模拟交易")
+    extras.append("尾盘买入")
+    notifier_type = config.get("notifier", {}).get("type", "无")
+
+    logger.info("=" * 50)
+    logger.info("A股行情监控")
+    logger.info("监控股票: %d 只", len(stocks))
+    for code, name in stocks.items():
+        tag = get_sector_tag(code)
+        logger.info("  %s %s (%s)", name or code, tag, code)
+    logger.info("技术信号: %s", ", ".join(enabled_signals))
+    if extras:
+        logger.info("扩展功能: %s", ", ".join(extras))
+    logger.info("通知通道: %s", notifier_type)
+    logger.info("轮询间隔: %d 秒", interval)
+    logger.info("=" * 50)
+
+    # 启动通知加上板块和回测（只在交易时段推送）
+    startup_stocks = []
+    backtest_lines = []
+    for code, name in stocks.items():
+        tag = get_sector_tag(code)
+        startup_stocks.append(f"{name or code}({code}) {tag}")
+        # 跑回测
+        kline = fetch_kline(code, 365)
+        if kline is not None:
+            r = backtest_ma_crossover(code, name, kline, ma_short=10, ma_long=40, rsi_filter=True, stop_loss_pct=8)
+            ret_icon = "📈" if r.total_return > 0 else "📉"
+            backtest_lines.append(f"  {ret_icon} {name}({code}) {r.strategy}: {r.total_return:+.1f}% 胜率{r.win_rate:.0f}% 回撤{r.max_drawdown:.0f}% 交易{r.total_trades}次")
+
+    config["_stock_list_display"] = startup_stocks
+    config["_backtest_summary"] = backtest_lines
+    config["_paper_report"] = paper.generate_report()
+    # 启动通知改为9:30在循环中触发
+
+    # 配置文件监控（支持热加载）
+    config_mtime = os.path.getmtime("config.yaml")
+
+    while True:
+        now = datetime.now()
+
+        # 检查配置是否被Webhook修改
+        try:
+            new_mtime = os.path.getmtime("config.yaml")
+            if new_mtime != config_mtime:
+                config_mtime = new_mtime
+                new_config = load_config()
+                if new_config and new_config.get("stocks"):
+                    old_stocks = len(config.get("stocks", {}))
+                    config = new_config
+                    stocks = config.get("stocks", {})
+                    logger.info("检测到配置变更，已热加载 (原%d只->现%d只)", old_stocks, len(stocks))
+        except:
+            pass
+
+        if now.date() != last_date:
+            last_date = now.date()
+            dedup.reset()
+            briefed_today.clear()
+            dip_buy_done_today = False
+            close_buy_done_today = False
+            summary_done_today = False
+            today_signals.clear()
+            cycle_count = 0
+            last_snapshot.clear()
+            intraday_alerts.clear()
+            logger.info("新交易日，已重置记录")
+
+        now_time = now.time()
+
+        # ── 开盘前分析（9:20-9:30，在交易时段外执行） ──
+        if not premarket_done and dt_time(9, 20) <= now_time <= dt_time(9, 30):
+            premarket_done = True
+            logger.info("生成开盘前分析...")
+            try:
+                from src.fetcher import fetch_market_index
+                from src.predictor import predict_tomorrow
+                pre_lines = ["\U0001f305 **开盘前分析**", ""]
+                # 大盘
+                try:
+                    sh = fetch_market_index("000001")
+                    if sh:
+                        icon = "\U0001f4c8" if sh["change_pct"] >= 0 else "\U0001f4c9"
+                        pre_lines.append(f"{icon} 大盘: {sh['name']} {sh['price']} {sh['change_pct']:+.2f}%")
+                        pre_lines.append("")
+                except: pass
+                # 个股明日预测+评分
+                bullish = bearish = neutral = 0
+                for p_code, p_name in stocks.items():
+                    pk = fetch_kline(p_code, 60)
+                    if pk is not None and len(pk) > 20:
+                        pc = pk["close"].values.astype(float)
+                        pv = pk["volume"].values.astype(float) if "volume" in pk.columns else np.array([])
+                        ph = pk["high"].values.astype(float) if "high" in pk.columns else pc
+                        pl = pk["low"].values.astype(float) if "low" in pk.columns else pc
+                        p_pred = predict_tomorrow(pc, ph, pl, pv, pc[-1])
+                        icon = {"看涨": "\U0001f4c8", "看跌": "\U0001f4c9", "震荡": "\u2796"}.get(p_pred["direction"], "")
+                        kline_reason = p_pred.get("reason", "")
+                        if len(pc) >= 5:
+                            chg_5d = (pc[-1] / pc[-5] - 1) * 100
+                            trend_5d = f"5日{chg_5d:+.1f}%"
+                        else:
+                            trend_5d = ""
+                        from src.signals import _sma
+                        ma5_v = _sma(pc, 5); ma20_v = _sma(pc, 20)
+                        ma_valid = ~np.isnan(ma5_v) & ~np.isnan(ma20_v)
+                        ma_pos = ""
+                        if len(ma5_v[ma_valid]) > 0:
+                            m5 = ma5_v[ma_valid][-1]; m20 = ma20_v[ma_valid][-1]
+                            ma_pos = "趋势向上" if m5 > m20 else "趋势向下"
+                        vol_trend = ""
+                        if len(pv) >= 5:
+                            avg_v = np.mean(pv[-5:])
+                            if avg_v > 0:
+                                vr = pv[-1] / avg_v
+                                vol_trend = f"量{vr:.1f}"
+                        extra = " | ".join(filter(None, [kline_reason[:15], trend_5d, ma_pos, vol_trend]))
+                        pre_lines.append(f"  {icon} {p_name}({p_code}): {p_pred['direction']}({p_pred['confidence']}%)")
+                        if extra:
+                            pre_lines.append(f"     {extra}")
+                        if p_pred["direction"] == "看涨": bullish += 1
+                        elif p_pred["direction"] == "看跌": bearish += 1
+                        else: neutral += 1
+                if bullish + bearish + neutral > 0:
+                    t = bullish + bearish + neutral
+                    ti = "\U0001f4c8" if bullish >= bearish else "\U0001f4c9"
+                    pre_lines.insert(1, f"{ti} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只")
+                # ── 开盘前自动交易（基于昨日收盘数据） ──
+                trade_lines = []
+                for t_code, t_name in stocks.items():
+                    rt = fetch_realtime(t_code)
+                    if not rt: continue
+                    t_price = rt.get("price", 0)
+                    t_kline = fetch_kline(t_code, 60)
+                    if t_kline is None or len(t_kline) < 25: continue
+                    t_closes = t_kline["close"].values.astype(float)
+                    t_volumes = t_kline["volume"].values.astype(float) if "volume" in t_kline.columns else np.array([])
+                    t_ff = fetch_fund_flow(t_code)
+                    t_si = compute_score(t_closes, t_volumes, t_price, t_ff, code=t_code)
+                    t_score = t_si.get("score", 0)
+                    t_highs = t_kline["high"].values.astype(float) if "high" in t_kline.columns else t_closes
+                    t_lows = t_kline["low"].values.astype(float) if "low" in t_kline.columns else t_closes
+                    t_pred = predict_tomorrow(t_closes, t_highs, t_lows, t_volumes, t_price)
+                    t_has = t_code in paper.portfolio.positions
+                    if not t_has and t_score >= 45 and t_pred["direction"] == "看涨":
+                        buy_t = paper._buy_position(t_code, t_name, t_price, 0.20,
+                            f"开盘买入·评分{t_score}·预测{t_pred['direction']}", add_count=0)
+                        if buy_t:
+                            trade_lines.append(f"  \U0001f7e2 买入 {t_name}({t_code}) {t_price:.2f}元")
+                    elif t_has and (t_score < 35 or t_pred["direction"] == "看跌"):
+                        pos = paper.portfolio.positions.get(t_code)
+                        if pos and pos.buy_date != date.today().isoformat():
+                            sell_t = paper._sell_position(t_code, t_price,
+                                f"开盘卖出·评分{t_score}·预测{t_pred['direction']}")
+                            if sell_t:
+                                trade_lines.append(f"  \U0001f534 卖出 {t_name}({t_code}) {t_price:.2f}元")
+                if trade_lines:
+                    pre_lines.append("")
+                    pre_lines.append("\U0001f504 **开盘自动交易**")
+                    pre_lines.extend(trade_lines)
+                pre_lines.append("")
+                pre_lines.append("\U0001f4a1 **今日关注**")
+                pre_lines.append("  \u2022 评分\u226545+预测看涨可买入")
+                pre_lines.append("  \u2022 已持仓评分<35需卖出")
+                pre_lines.append("  \u2022 9:30开盘后自动监控")
+                notify(config, "\U0001f305 开盘前分析", "\n".join(pre_lines))
+            except Exception as e:
+                logger.debug("开盘前分析失败: %s", e)
+
+        if is_trading_time():
+
+            # ── 启动通知（9:30，每天一次） ──
+            if not startup_done and now_time >= dt_time(9, 30) and now_time <= dt_time(9, 35):
+                startup_done = True
+                logger.info("推送启动通知...")
+                notify_startup(config)
+
+            # ── 尾盘低吸扫描（14:30-15:00，每天一次） ──
+            if (
+                not dip_buy_done_today
+                and dt_time(14, 30) <= now_time <= dt_time(15, 0)
+            ):
+                dip_buy_done_today = True
+                logger.info("开始尾盘低吸扫描...")
+                candidates = scan_dip_buy_candidates(max_price=150, tech_only=True)
+                report = generate_dip_buy_report(candidates, max_price=150, tech_only=True)
+                if report:
+                    notify(config, "📋 尾盘低吸机会扫描", report)
+                # 同时推送模拟账户报告
+                acc_report = paper.generate_report()
+                if acc_report:
+                    notify(config, "📋 模拟账户日报", acc_report)
+
+            # ── 尾盘买入扫描（14:50-15:00，每天一次） ──
+            if (
+                not close_buy_done_today
+                and dt_time(14, 50) <= now_time <= dt_time(15, 0)
+            ):
+                close_buy_done_today = True
+                logger.info("开始尾盘买入扫描...")
+                close_candidates = scan_close_buy_candidates(max_price=150, tech_only=True)
+                close_report = generate_close_buy_report(close_candidates, max_price=150, tech_only=True)
+                if close_report:
+                    notify(config, "📋 尾盘买入推荐", close_report)
+                # 尾盘自动交易：推荐股票买入（需次日看涨），ETF优先
+                for c in close_candidates[:3]:
+                    if c["code"] not in paper.portfolio.positions and c["score"] >= 55:
+                        rt_trade = fetch_realtime(c["code"])
+                        price = rt_trade["price"] if rt_trade else c["price"]
+                        k_pred = fetch_kline(c["code"], 60)
+                        pred_adj = 0
+                        pred = {"direction": "未知", "target_label": "明日", "reason": "数据不足", "confidence": 50}
+                        if k_pred is not None and "high" in k_pred.columns:
+                            from src.predictor import predict_tomorrow
+                            pred = predict_tomorrow(
+                                k_pred["close"].values.astype(float),
+                                k_pred["high"].values.astype(float),
+                                k_pred["low"].values.astype(float),
+                                k_pred["volume"].values.astype(float) if "volume" in k_pred.columns else np.array([]),
+                                price,
+                            )
+                            if pred["direction"] == "看涨":
+                                pred_adj = 5
+                                logger.info("%s预判看涨: %s %s", pred.get("target_label", "明日"), c["name"], pred["reason"])
+                            elif pred["direction"] == "看跌":
+                                pred_adj = -10
+                                logger.info("%s预判看跌，跳过买入: %s", pred.get("target_label", "明日"), c["name"])
+                        if pred_adj >= 0:
+                            # ETF优先：ETF仓位更高
+                            buy_ratio = 0.25 if c["code"].startswith(("5", "1")) else 0.20
+                            # 接入情绪+日内趋势调节
+                            try:
+                                from src.scoring import get_market_sentiment, get_intraday_trend
+                                s_level, s_label = get_market_sentiment()
+                                t_desc, t_intensity = get_intraday_trend()
+                                sentiment_map = {-2: 0.3, -1: 0.6, 0: 1.0, 1: 0.7, 2: 0.4}
+                                trend_map = {"高开低走": 0.5, "单边下跌": 0.4, "低开高走": 1.2, "单边上涨": 0.8, "震荡": 1.0}
+                                s_adj = sentiment_map.get(s_level, 1.0)
+                                t_adj = next((v for k, v in trend_map.items() if t_desc.startswith(k)), 1.0)
+                                buy_ratio = round(buy_ratio * s_adj * t_adj, 2)
+                                logger.info("尾盘情绪[%s]趋势[%s] 仓位%.0f%%→%.0f%%", s_label, t_desc, 0.25 if c["code"].startswith(("5", "1")) else 0.20, buy_ratio*100)
+                            except: pass
+                            if buy_ratio >= 0.03:
+                                buy_trade = paper._buy_position(c["code"], c["name"], price, buy_ratio,
+                                f"尾盘买入·{pred.get('target_label','明日')}{pred['direction'] if k_pred is not None else ''}评分{c['score']}", add_count=0)
+                                if buy_trade:
+                                    notify(config, "🔄 尾盘买入", f"尾盘买入 {c['name']}({c['code']}) {price:.2f}元")
+                # 尾盘加仓：大跌日允许补仓摊低成本
+                for c in close_candidates[:6]:
+                    if c["code"] in paper.portfolio.positions and c["score"] >= 45:
+                        pos = paper.portfolio.positions.get(c["code"])
+                        if pos and pos.add_count < 3:
+                            # 正常情况：盈利中才加仓；大跌日(亏损>3%)允许补仓
+                            allow_add = pos.profit_pct > 0
+                            if pos.profit_pct <= -3 and pos.add_count < 2:
+                                allow_add = True  # 大跌摊低成本，但最多补2次
+                            if allow_add:
+                                rt_trade = fetch_realtime(c["code"])
+                                price = rt_trade["price"] if rt_trade else c["price"]
+                                k_pred = fetch_kline(c["code"], 60)
+                                if k_pred is not None and "high" in k_pred.columns:
+                                    from src.predictor import predict_tomorrow
+                                    pred = predict_tomorrow(
+                                        k_pred["close"].values.astype(float),
+                                        k_pred["high"].values.astype(float),
+                                        k_pred["low"].values.astype(float),
+                                        k_pred["volume"].values.astype(float) if "volume" in k_pred.columns else np.array([]),
+                                        price,
+                                    )
+                                    if pred["direction"] != "看跌":
+                                        add_ratio_w = 0.10
+                                        try:
+                                            from src.scoring import get_market_sentiment, get_intraday_trend
+                                            s_level, s_label = get_market_sentiment()
+                                            t_desc, _ = get_intraday_trend()
+                                            s_map = {-2: 0.3, -1: 0.6, 0: 1.0, 1: 0.7, 2: 0.4}
+                                            t_map = {"高开低走": 0.5, "单边下跌": 0.4, "低开高走": 1.2, "单边上涨": 0.8}
+                                            add_ratio_w = round(0.10 * s_map.get(s_level, 1.0) * next((v for k, v in t_map.items() if t_desc.startswith(k)), 1.0), 2)
+                                        except: pass
+                                        if add_ratio_w < 0.03: add_ratio_w = 0.03
+                                        add_trade = paper._buy_position(c["code"], c["name"], price, add_ratio_w,
+                                            f"尾盘加仓·评分{c['score']}", add_count=pos.add_count + 1)
+                                        if add_trade:
+                                            notify(config, "🔄 尾盘加仓", f"尾盘加仓 {c['name']}({c['code']}) {price:.2f}元")
+                # 尾盘卖出：大跌日不止损（避免割在最低点）
+                # 检查今天是否普跌日
+                today_is_bloody = False
+                try:
+                    sh_check = fetch_market_index("000001")
+                    if sh_check and sh_check.get("change_pct", 0) <= -1.5:
+                        today_is_bloody = True
+                except: pass
+                for pcode in list(paper.portfolio.positions.keys()):
+                    pos = paper.portfolio.positions.get(pcode)
+                    if not pos: continue
+                    rt_sell = fetch_realtime(pcode)
+                    sell_price = rt_sell["price"] if rt_sell else pos.current_price
+                    sell_action = None
+                    if pos.profit_pct >= 8:
+                        sell_action = paper._sell_position(pcode, sell_price, f"尾盘止盈{pos.profit_pct:.1f}%")
+                    elif pos.profit_pct <= -5 and not today_is_bloody:
+                        # 大跌日不触发止损，等反弹再说
+                        sell_action = paper._sell_position(pcode, sell_price, f"尾盘止损{pos.profit_pct:.1f}%")
+                    elif pos.profit_pct <= -8 and today_is_bloody:
+                        # 即使大跌日，亏损超过8%也止损
+                        sell_action = paper._sell_position(pcode, sell_price, f"尾盘止损{pos.profit_pct:.1f}%（普跌日放宽至8%）")
+                    if sell_action:
+                        notify(config, "🔄 尾盘卖出", f"尾盘卖出 {pos.stock_name}({pcode}) {sell_price:.2f}元")
+
+                # ── 明日预测汇总（14:50-15:00，仅推送一次） ──
+                if not pred_done_today and dt_time(14, 55) <= now_time <= dt_time(15, 0):
+                    pred_done_today = True
+                    logger.info("生成明日预测汇总...")
+                    try:
+                        from src.fetcher import fetch_market_index
+                        from src.predictor import predict_tomorrow
+                        pred_lines = ["🔮 **明日预测汇总**", ""]
+                        bullish = bearish = neutral = 0
+                        for p_code, p_name in stocks.items():
+                            pk = fetch_kline(p_code, 60)
+                            if pk is not None and len(pk) > 20:
+                                pc = pk["close"].values.astype(float)
+                                pv = pk["volume"].values.astype(float) if "volume" in pk.columns else np.array([])
+                                ph = pk["high"].values.astype(float) if "high" in pk.columns else pc
+                                pl = pk["low"].values.astype(float) if "low" in pk.columns else pc
+                                p_pred = predict_tomorrow(pc, ph, pl, pv, pc[-1])
+                                icon = {"看涨": "📈", "看跌": "📉", "震荡": "➖"}.get(p_pred["direction"], "❓")
+                                pred_lines.append(f"  {icon} {p_name}({p_code}): {p_pred['direction']}({p_pred['confidence']}%)")
+                                if p_pred["direction"] == "看涨": bullish += 1
+                                elif p_pred["direction"] == "看跌": bearish += 1
+                                else: neutral += 1
+                        if bullish + bearish + neutral > 0:
+                            total = bullish + bearish + neutral
+                            trend_icon = "📈" if bullish >= bearish else "📉"
+                            trend_text = f"{trend_icon} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只"
+                            pred_lines.insert(1, trend_text)
+                        if len(pred_lines) > 2:
+                            notify(config, "🔮 明日预测", "\n".join(pred_lines))
+                    except Exception as e:
+                        logger.debug("明日预测推送失败: %s", e)
+
+            logger.info("--- 轮询 %s ---", now.strftime("%H:%M:%S"))
+            
+            # 收集本轮所有消息，合并推送
+            batch_messages = []
+            
+            signals, briefing_parts = run_once(config, dedup, briefed_today, last_date)
+            # 行情简报已取消
+            for sig in signals:
+                today_signals.append(sig)
+                # 收集所有信号，每条带股票名
+                chg_str = f" {sig.change_pct:+.2f}%" if sig.change_pct else ""
+                batch_messages.append(f"  · {sig.stock_name}: {sig.signal_label}{chg_str}")
+
+            # 评分驱动模拟交易
+            stock_snapshots = []  # 用于定期快报
+            current_state = {}    # 用于检测变动  code -> (price, score)
+            current_prices = {}
+            buy_analysis = []     # AI买入条件分析
+            for code, name in stocks.items():
+                kline = fetch_kline(code, 60)
+                fund_flow = fetch_fund_flow(code)
+                realtime = fetch_realtime(code)
+                if kline is None or realtime is None:
+                    continue
+                price = realtime["price"]
+                current_prices[code] = price
+                closes = kline["close"].values.astype(float)
+                volumes = kline["volume"].values.astype(float) if "volume" in kline.columns else np.array([])
+                if "high" in kline.columns and "low" in kline.columns:
+                    from src.signals import calc_atr
+                    highs = kline["high"].values.astype(float)
+                    lows = kline["low"].values.astype(float)
+                    atr_val = calc_atr(closes, highs, lows, 14)
+                else:
+                    atr_val = 0
+                score_info = compute_score(closes, volumes, price, fund_flow, code=code, change_pct=realtime.get("change_pct", 0))
+                score_info["atr"] = atr_val
+                score_info["change_pct"] = realtime.get("change_pct", 0)
+                # 传入均线值用于趋势保护
+                from src.signals import _sma
+                ma5_v = _sma(closes, 5)
+                ma20_v = _sma(closes, 20)
+                valid_ma = ~np.isnan(ma5_v) & ~np.isnan(ma20_v)
+                if len(ma5_v[valid_ma]) > 0:
+                    score_info["ma5"] = ma5_v[valid_ma][-1]
+                    score_info["ma20"] = ma20_v[valid_ma][-1]
+                trade = paper.process_score(code, name, price, score_info, kline)
+                # 收集快照（用于定期推送）
+                chg = realtime.get("change_pct", 0)
+                chg_icon = "📈" if chg >= 0 else "📉"
+                score_str = f"评分{score_info.get('score',0)}"
+                action_str = score_info.get("action", "")
+                if action_str:
+                    score_str += f"·{action_str}"
+                stock_snapshots.append(f"  {chg_icon} {name}({code}) {price:.2f} {chg:+.2f}% {score_str}")
+                current_state[code] = (price, score_info.get("score", 0))
+                # 收集AI买入条件分析
+                score_val = score_info.get("score", 0)
+                has_pos = code in paper.portfolio.positions
+                if score_val >= 40 and not has_pos:
+                    details = score_info.get("details", {})
+                    ma_d = details.get("均线", {}).get("desc", "")
+                    rsi_d = details.get("RSI", {}).get("desc", "")
+                    macd_d = details.get("MACD", {}).get("desc", "")
+                    vol_d = details.get("成交量", {}).get("desc", "")
+                    buy_analysis.append(f"  {chg_icon} {name}({code}) 评分{score_val} {ma_d} {rsi_d}")
+                if trade:
+                    logger.info("评分交易: %s %s", trade.action, name)
+                    profit_str = f" 盈亏{trade.profit_pct:+.2f}%" if trade.profit_pct else ""
+                    # 重点提醒交易（带时间+详细原因）
+                    trade_icon = "🟢" if "买入" in trade.action or trade.action == "加仓" else ("🔴" if "卖出" in trade.action else "🔄")
+                    profit_extra = f" {trade.profit_pct:+.2f}%" if trade.profit_pct else ""
+                    notify(config, f"{trade_icon} 交易提醒",
+                        f"{trade_icon} **{trade.action} {name}({trade.stock_code})**\n"
+                        f"⏰ {now.strftime('%H:%M:%S')}\n"
+                        f"价格: {trade.price:.2f}元\n"
+                        f"数量: {trade.shares}股\n"
+                        f"金额: {trade.price*trade.shares:.0f}元{profit_extra}\n"
+                        f"原因: {trade.reason}")
+
+            paper.update_prices(current_prices)
+
+            # ── 检测单股异动，有变动时单独推送 ──
+            if stock_snapshots and last_snapshot:
+                changed_snaps = []
+                for code, (price, score) in current_state.items():
+                    prev = last_snapshot.get(code)
+                    if prev:
+                        prev_price, _ = prev
+                        price_chg_pct = abs(price - prev_price) / max(prev_price, 0.01) * 100
+                        if price_chg_pct > 2.5:
+                            # 找到这只股票对应的快照行
+                            for snap in stock_snapshots:
+                                if f"({code})" in snap:
+                                    changed_snaps.append(snap)
+                                    break
+                last_snapshot = current_state
+
+                for snap in changed_snaps:
+                    # 从快照行提取股票名
+                    name_part = snap.split("(", 1)[0].strip().lstrip("📈📉")
+                    msg = f"⚡ **{name_part}异动**\n{snap}"
+                    notify(config, "⚡ 异动提醒", msg)
+                if not changed_snaps:
+                    logger.debug("无显著变动，跳过本次推送")
+
+            elif not last_snapshot:
+                # 首次运行，记录状态但不推送
+                last_snapshot = current_state
+                logger.info("首次监测，已记录初始状态")
+
+            # ── 盘中异动检测（跳水/深V） ──
+            intraday_events = []
+            for code, name in stocks.items():
+                realtime = fetch_realtime(code)
+                if not realtime:
+                    continue
+                price = realtime["price"]
+                chg = realtime.get("change_pct", 0)
+                
+                # 记录价格历史
+                now_ts = now.timestamp()
+                if code not in price_history:
+                    price_history[code] = []
+                price_history[code].append((now_ts, price))
+                # 只保留最近30分钟的数据
+                cutoff = now_ts - 1800
+                price_history[code] = [(t, p) for t, p in price_history[code] if t > cutoff]
+
+                hist = price_history[code]
+                if len(hist) < 3:
+                    continue
+
+                prices_only = [p for _, p in hist]
+                recent = prices_only[-5:] if len(prices_only) >= 5 else prices_only
+                first_price = recent[0]
+                last_price = recent[-1]
+                min_price = min(recent)
+                max_price = max(recent)
+                drop_pct = (min_price - first_price) / first_price * 100
+                rebound_pct = (last_price - min_price) / min_price * 100
+                total_chg = (last_price - first_price) / first_price * 100
+
+                alert_key = f"{code}_{now.strftime('%H')}"
+
+                # ── 涨停/跌停提醒 + 跌停智能分析 ──
+                if chg <= -9.5 and alert_key + "_limitdown" not in intraday_alerts:
+                    intraday_alerts.add(alert_key + "_limitdown")
+                    display = realtime.get("name", name)
+                    logger.info("跌停预警: %s %.1f%%", display, chg)
+                    intraday_events.append(f"  🔴 {display} 跌停 {chg:.1f}%")
+                    # ── 跌停智能分析：看是否值得抄底 ──
+                    limitdown_code = code
+                    limitdown_name = display
+                    try:
+                        k_ld = fetch_kline(code, 60)
+                        if k_ld is not None and len(k_ld) > 20:
+                            closes_ld = k_ld["close"].values.astype(float)
+                            volumes_ld = k_ld["volume"].values.astype(float) if "volume" in k_ld.columns else np.array([])
+                            # 1. 看今日成交量是否异常放大（放量跌停=恐慌，缩量跌停=惜售）
+                            vol_ratio_ld = 1.0
+                            if len(volumes_ld) >= 10:
+                                avg_v = np.mean(volumes_ld[-10:-1])
+                                cur_v = realtime.get("volume", 0) if realtime else 0
+                                vol_ratio_ld = cur_v / avg_v if avg_v > 0 else 1.0
+                            # 2. 看是否连续跌停（检查昨日的涨跌幅）
+                            prev_close = closes_ld[-2] if len(closes_ld) >= 2 else 0
+                            prev_chg = (closes_ld[-1] / prev_close - 1) * 100 if prev_close > 0 else 0
+                            consecutive = prev_chg <= -9  # 昨日也接近跌停
+                            # 3. 从预测看明日方向
+                            from src.predictor import predict_tomorrow
+                            pred_ld = predict_tomorrow(
+                                closes_ld,
+                                k_ld["high"].values.astype(float) if "high" in k_ld.columns else closes_ld,
+                                k_ld["low"].values.astype(float) if "low" in k_ld.columns else closes_ld,
+                                volumes_ld, price
+                            )
+                            # 分析结论
+                            analysis_parts = [f"  📊 {display}({code}) 跌停分析:"]
+                            # 成交量
+                            if vol_ratio_ld > 2:
+                                analysis_parts.append(f"     放量{vol_ratio_ld:.1f}倍跌停😱 — 恐慌盘涌出，暂不抄底")
+                            elif vol_ratio_ld < 0.5:
+                                analysis_parts.append(f"     缩量{vol_ratio_ld:.1f}倍跌停🤔 — 惜售明显，关注反弹机会")
+                            else:
+                                analysis_parts.append(f"     量能正常跌停 — 观望")
+                            # 连续跌停
+                            if consecutive:
+                                analysis_parts.append(f"     连续跌停⚠️ — 趋势极弱，不接飞刀")
+                            else:
+                                analysis_parts.append(f"     首次跌停 — 可能是恐慌过度")
+                            # 预测
+                            if pred_ld["direction"] == "看涨":
+                                analysis_parts.append(f"     明日预测看涨({pred_ld['confidence']}%)✅ — 反弹概率大")
+                                # 条件满足：缩量+首次+预测看涨 → 自动买入
+                                if vol_ratio_ld < 1.5 and not consecutive and pred_ld["confidence"] >= 55:
+                                    buy_ld = paper._buy_position(code, display, price, 0.05,
+                                        f"跌停抄底·{pred_ld['direction']}{pred_ld['confidence']}%·缩量{vol_ratio_ld:.1f}倍")
+                                    if buy_ld:
+                                        analysis_parts.append(f"     🟢 自动买入5%仓位抄底")
+                                        batch_messages.append(f"  🔄 跌停抄底 {display}({code}) {price:.2f}元×{buy_ld.shares}股")
+                            else:
+                                analysis_parts.append(f"     明日预测{pred_ld['direction']} — 等企稳再考虑")
+                            for ap in analysis_parts:
+                                intraday_events.append(ap)
+                    except Exception as e:
+                        logger.debug("跌停分析失败: %s", e)
+                elif chg >= 9.5 and alert_key + "_limitup" not in intraday_alerts:
+                    intraday_alerts.add(alert_key + "_limitup")
+                    display = realtime.get("name", name)
+                    logger.info("涨停预警: %s +%.1f%%", display, chg)
+                    intraday_events.append(f"  🟢 {display} 涨停 +{chg:.1f}%")
+
+                # 跳水检测：5分钟内跌超2%
+                if drop_pct <= -2.0 and total_chg <= -1.5 and alert_key + "_drop" not in intraday_alerts:
+                    intraday_alerts.add(alert_key + "_drop")
+                    display = realtime.get("name", name)
+                    logger.info("跳水预警: %s %.1f%%", display, abs(drop_pct))
+                    intraday_events.append(f"  ⚠️ {display} 跳水 {abs(drop_pct):.1f}%")
+                    # 数据分析后再决定是否卖出
+                    should_sell = True  # 默认卖出
+                    analysis_reason = f"跳水{abs(drop_pct):.1f}%"
+                    # 检查是否有持仓
+                    if code in paper.portfolio.positions:
+                        pos = paper.portfolio.positions[code]
+                        # 获取K线数据计算ATR
+                        kline_drop = fetch_kline(code, 60)
+                        if kline_drop is not None and len(kline_drop) > 20:
+                            from src.signals import calc_atr, _sma
+                            closes_drop = kline_drop["close"].values.astype(float)
+                            if "high" in kline_drop.columns and "low" in kline_drop.columns:
+                                highs_drop = kline_drop["high"].values.astype(float)
+                                lows_drop = kline_drop["low"].values.astype(float)
+                                atr_drop = calc_atr(closes_drop, highs_drop, lows_drop, 14)
+                                # 如果跳水幅度小于ATR的2倍，可能是正常波动
+                                if atr_drop > 0:
+                                    atr_pct = atr_drop / price * 100
+                                    if abs(drop_pct) < atr_pct * 2:
+                                        should_sell = False
+                                        analysis_reason = f"跳水{abs(drop_pct):.1f}%但在ATR范围内"
+                        # 如果价格仍在MA20上方，说明趋势未破，不卖
+                        kline_temp = fetch_kline(code, 60)
+                        if kline_temp is not None and len(kline_temp) > 25:
+                            from src.signals import _sma
+                            closes_temp = kline_temp["close"].values.astype(float)
+                            ma20 = _sma(closes_temp, 20)
+                            valid = ~np.isnan(ma20)
+                            if len(ma20[valid]) > 0:
+                                ma20_val = ma20[valid][-1]
+                                if price > ma20_val:
+                                    should_sell = False
+                                    analysis_reason = f"跳水但仍在MA20({ma20_val:.2f})上方"
+                    if should_sell:
+                        sell_trade = paper._sell_position(code, price, analysis_reason)
+                        if sell_trade:
+                            profit_str = f" 盈亏{sell_trade.profit_pct:+.2f}%" if sell_trade.profit_pct else ""
+                            profit_extra = f" {sell_trade.profit_pct:+.2f}%" if sell_trade.profit_pct else ""
+                            notify(config, "🔴 交易提醒",
+                                f"🔴 **卖出 {display}({code})**\n"
+                                f"⏰ {now.strftime('%H:%M:%S')}\n"
+                                f"价格: {price:.2f}元\n"
+                                f"数量: {sell_trade.shares}股\n"
+                                f"金额: {price*sell_trade.shares:.0f}元{profit_extra}\n"
+                                f"原因: {sell_trade.reason}")
+                    else:
+                        logger.info("跳水不卖出: %s", analysis_reason)
+                        intraday_events.append(f"  ℹ️ {display} {analysis_reason}，暂不操作")
+
+                # 深V检测：先跌超2%再反弹超0.5%，成交量萎缩更可靠
+                if drop_pct <= -2.0 and rebound_pct >= 0.5 and abs(total_chg) < 1.0 and alert_key + "_vv" not in intraday_alerts:
+                    intraday_alerts.add(alert_key + "_vv")
+                    display = realtime.get("name", name)
+                    logger.info("深V检测: %s 跌%.1f%%后反弹%.1f%%", display, abs(drop_pct), rebound_pct)
+                    intraday_events.append(f"  🆘 {display} 深V反弹 {rebound_pct:.1f}%")
+                    should_buy = True
+                    analysis_reason = f"深V反弹{rebound_pct:.1f}%"
+                    # 成交量萎缩（说明抛压衰竭）加分
+                    vol_ok = True
+                    if kline is not None and "volume" in kline.columns and len(kline) >= 10:
+                        vols = kline["volume"].values.astype(float)
+                        avg_v = np.mean(vols[-10:-1])
+                        cur_v = realtime.get("volume", 0) if realtime else 0
+                        vol_ratio = cur_v / avg_v if avg_v > 0 else 1
+                        if vol_ratio > 2:
+                            vol_ok = False
+                            analysis_reason = f"深V但放量{vol_ratio:.1f}倍，抛压仍在"
+                    # 检查趋势 - 如果均线空头排列则不买
+                    kline_vv = fetch_kline(code, 60)
+                    if kline_vv is not None and len(kline_vv) > 25:
+                        from src.signals import _sma
+                        closes_vv = kline_vv["close"].values.astype(float)
+                        ma5_vv = _sma(closes_vv, 5)
+                        ma20_vv = _sma(closes_vv, 20)
+                        valid_vv = ~np.isnan(ma5_vv) & ~np.isnan(ma20_vv)
+                        if len(ma5_vv[valid_vv]) > 0 and len(ma20_vv[valid_vv]) > 0:
+                            if ma5_vv[valid_vv][-1] < ma20_vv[valid_vv][-1]:
+                                should_buy = False
+                                analysis_reason = "均线空头排列，反弹可能只是昙花一现"
+                    if should_buy and vol_ok and code not in paper.portfolio.positions:
+                        # ETF优先：ETF给更高仓位
+                        vv_ratio = 0.25 if code.startswith(("5", "1")) else 0.20
+                        buy_trade = paper._buy_position(code, display, price, vv_ratio, analysis_reason)
+                        if buy_trade:
+                            notify(config, "🟢 交易提醒",
+                                f"🟢 **买入 {display}({code})**\n"
+                                f"⏰ {now.strftime('%H:%M:%S')}\n"
+                                f"价格: {price:.2f}元\n"
+                                f"数量: {buy_trade.shares}股\n"
+                                f"金额: {price*buy_trade.shares:.0f}元\n"
+                                f"原因: {analysis_reason}")
+
+                # 急跌抄底：分级抄底+量能判断+大盘联动
+                # 跌3%/5%/7%三档，逐级加仓
+                panic_tier = None
+                panic_ratio = 0
+                if drop_pct <= -7.0:
+                    panic_tier = 7; panic_ratio = 0.15
+                elif drop_pct <= -5.0:
+                    panic_tier = 5; panic_ratio = 0.10
+                elif drop_pct <= -3.0:
+                    panic_tier = 3; panic_ratio = 0.05
+                if panic_tier and alert_key + "_panic" not in intraday_alerts:
+                    intraday_alerts.add(alert_key + "_panic")
+                    display = realtime.get("name", name)
+                    should_buy_panic = False
+                    kline_panic = fetch_kline(code, 60)
+                    if kline_panic is not None and len(kline_panic) > 20:
+                        closes_panic = kline_panic["close"].values.astype(float)
+                        from src.signals import _calc_rsi, _sma
+                        rsi_val = _calc_rsi(closes_panic, 14)
+                        ma20_panic = _sma(closes_panic, 20)
+                        ma60_panic = _sma(closes_panic, 60)
+                        valid_p = ~np.isnan(ma20_panic) & ~np.isnan(ma60_panic)
+                        above_ma60 = ma60_panic[valid_p][-1] < price if len(ma60_panic[valid_p]) > 0 else False
+                        # 超卖 + 趋势未破
+                        rsi_ok = rsi_val is not None and rsi_val < 30
+                        trend_ok = above_ma60
+                        # 成交量判断：放量下跌不抄（恐慌未出清），缩量下跌才抄
+                        vol_ok_panic = True
+                        if "volume" in kline_panic.columns:
+                            vols_p = kline_panic["volume"].values.astype(float)
+                            avg_v_p = np.mean(vols_p[-10:-1]) if len(vols_p) >= 10 else np.mean(vols_p)
+                            cur_v_p = realtime.get("volume", 0) if realtime else vols_p[-1] if len(vols_p) > 0 else 0
+                            v_ratio_p = cur_v_p / avg_v_p if avg_v_p > 0 else 1
+                            if v_ratio_p > 2:
+                                vol_ok_panic = False  # 放量下跌，不抄
+                        # 大盘环境：跌太猛时减半仓而不是禁止
+                        market_penalty = 1.0
+                        try:
+                            from src.fetcher import fetch_market_index
+                            sh = fetch_market_index("000001")
+                            if sh:
+                                sh_chg = sh.get("change_pct", 0)
+                                if sh_chg <= -3:
+                                    market_penalty = 0.3  # 大盘暴跌，极轻仓
+                                elif sh_chg <= -2:
+                                    market_penalty = 0.5  # 大盘大跌，减半
+                                elif sh_chg <= -1:
+                                    market_penalty = 0.7  # 大盘小跌，7折
+                        except: pass
+                        if (rsi_ok or trend_ok) and vol_ok_panic:
+                            should_buy_panic = True
+                    if should_buy_panic and code not in paper.portfolio.positions:
+                        final_ratio = panic_ratio * market_penalty
+                        # ETF优先：ETF给更高仓位
+                        if code.startswith(("5", "1")):
+                            final_ratio = min(final_ratio * 1.5, 0.20)
+                        if final_ratio >= 0.03:
+                            buy_trade = paper._buy_position(code, display, price, final_ratio,
+                                f"急跌{panic_tier}%·RSI{rsi_val:.0f}·仓位{final_ratio:.0%}")
+                            if buy_trade:
+                                logger.info("急跌抄底: %s 跌%.1f%% RSI%.0f 仓位%.0f%%", display, abs(drop_pct), rsi_val, final_ratio*100)
+                                notify(config, "🟢 交易提醒",
+                                    f"🟢 **急跌抄底 {display}({code})**\n"
+                                    f"⏰ {now.strftime('%H:%M:%S')}\n"
+                                    f"价格: {price:.2f}元\n"
+                                    f"数量: {buy_trade.shares}股\n"
+                                    f"金额: {price*buy_trade.shares:.0f}元\n"
+                                    f"原因: 急跌{abs(drop_pct):.0f}%抄底 RSI{rsi_val:.0f}")
+
+                # ── 今日整体大跌抄底（全天累计跌幅深，不看几分钟窗口） ──
+                daily_drop_key = f"daily_{code}_{now.strftime('%Y%m%d')}"
+                if chg <= -4.0 and daily_drop_key not in intraday_alerts:
+                    intraday_alerts.add(daily_drop_key)
+                    d_display = realtime.get("name", name)
+                    should_buy_daily = False
+                    buy_reason_daily = ""
+                    # 跌4~6%：需要缩量+MA60上方
+                    if -6 < chg <= -4:
+                        kline_daily = fetch_kline(code, 60)
+                        if kline_daily is not None and len(kline_daily) > 25:
+                            from src.signals import _sma
+                            closes_d = kline_daily["close"].values.astype(float)
+                            ma60_d = _sma(closes_d, 60)
+                            valid_d = ~np.isnan(ma60_d)
+                            above_ma60 = ma60_d[valid_d][-1] < price if len(ma60_d[valid_d]) > 0 else False
+                            vol_daily = kline_daily["volume"].values.astype(float) if "volume" in kline_daily.columns else []
+                            vol_ok_daily = True
+                            if len(vol_daily) >= 5:
+                                vr = vol_daily[-1] / max(np.mean(vol_daily[-5:-1]), 1)
+                                if vr > 2: vol_ok_daily = False  # 放量不抄
+                            if above_ma60 and vol_ok_daily:
+                                should_buy_daily = True
+                                buy_reason_daily = f"今日跌{abs(chg):.0f}%·缩量·MA60上方"
+                    # 跌超6%：RSI超卖就直接抄
+                    elif chg <= -6:
+                        kline_daily = fetch_kline(code, 60)
+                        if kline_daily is not None and len(kline_daily) > 20:
+                            from src.signals import _calc_rsi
+                            closes_daily = kline_daily["close"].values.astype(float)
+                            rsi_daily = _calc_rsi(closes_daily, 14)
+                            if rsi_daily is not None and rsi_daily < 35:
+                                should_buy_daily = True
+                                buy_reason_daily = f"今日暴跌{abs(chg):.0f}%·RSI{rsi_daily:.0f}超卖"
+                    if should_buy_daily and code not in paper.portfolio.positions:
+                        daily_ratio = 0.08 if code.startswith(("5", "1")) else 0.05
+                        buy_daily = paper._buy_position(code, d_display, price, daily_ratio,
+                            f"今日大跌{abs(chg):.0f}%抄底·{buy_reason_daily}")
+                        if buy_daily:
+                            logger.info("今日大跌抄底: %s 跌%.1f%% %s", d_display, abs(chg), buy_reason_daily)
+                            batch_messages.append(f"  🔄 今日大跌抄底 {d_display}({code}) {price:.2f}元×{buy_daily.shares}股")
+
+            # ── 大盘风险预警（上证涨跌超1.5%/1%，每小时一次） ──
+            try:
+                sh = fetch_market_index("000001")
+                if sh:
+                    sh_chg = sh.get("change_pct", 0)
+                    sh_key = f"sh_{now.strftime('%Y%m%d_%H')}"
+                    if sh_chg <= -1.0 and sh_key + "_risk" not in intraday_alerts:
+                        intraday_alerts.add(sh_key + "_risk")
+                        level = "🔴 风险" if sh_chg <= -1.5 else "🟡 警告"
+                        intraday_events.append(f"  {level} 大盘跌{sh_chg:.1f}%({sh.get('name','上证')})")
+                    elif sh_chg >= 1.5 and sh_key + "_rally" not in intraday_alerts:
+                        intraday_alerts.add(sh_key + "_rally")
+                        intraday_events.append(f"  🟢 大盘涨{sh_chg:+.1f}%({sh.get('name','上证')}) 强势")
+            except Exception as e:
+                logger.debug("大盘风险检测失败: %s", e)
+
+            # ── 合并推送本轮消息（技术信号+交易+异动）──
+            important_msgs = [m for m in batch_messages if "🔄" in m]
+            signal_msgs = [m for m in batch_messages if m.startswith("  · ")]
+            if signal_msgs or intraday_events:
+                merged_lines = []
+                merged_lines.append(f"📊 **盘中快报** · {now.strftime('%H:%M')}")
+                if signal_msgs:
+                    for m in signal_msgs:
+                        merged_lines.append(m)
+                if important_msgs:
+                    if signal_msgs:
+                        merged_lines.append("")
+                    for m in important_msgs:
+                        merged_lines.append(m)
+                if intraday_events:
+                    if signal_msgs or important_msgs:
+                        merged_lines.append("")
+                    for m in intraday_events:
+                        merged_lines.append(m)
+                notify(config, "📊 盘中快报", "\n".join(merged_lines))
+
+            # ── 盘后总结（15:00，每天一次） ──
+            if not summary_done_today and now_time >= dt_time(15, 0):
+                summary_done_today = True
+                logger.info("生成盘后总结...")
+                summary = _generate_summary(config, today_signals, paper)
+                if summary:
+                    notify(config, "📋 今日盘后总结", summary)
+
+                # ── 每日交易总结 ──
+                try:
+                    today_str = date.today().isoformat()
+                    today_trades = [t for t in paper.portfolio.trades if t.date == today_str]
+                    buys = [t for t in today_trades if "买入" in t.action or t.action == "加仓"]
+                    sells = [t for t in today_trades if "卖出" in t.action]
+                    trade_lines = ["📊 **今日交易总结**", ""]
+                    if buys:
+                        trade_lines.append(f"  🟢 买入 {len(buys)} 次")
+                        for t in buys[:5]:
+                            trade_lines.append(f"     {t.stock_name} {t.price:.2f}元×{t.shares}股")
+                    if sells:
+                        trade_lines.append(f"  🔴 卖出 {len(sells)} 次")
+                        for t in sells[:5]:
+                            p_icon = "🟢" if t.profit_pct >= 0 else "🔴"
+                            trade_lines.append(f"     {p_icon} {t.stock_name} {t.price:.2f}元 {t.profit_pct:+.2f}%")
+                    if not buys and not sells:
+                        trade_lines.append("  今日无交易")
+                    trade_lines.append("")
+                    pos_count = len(paper.portfolio.positions)
+                    if pos_count > 0:
+                        trade_lines.append(f"  📦 持仓 {pos_count} 只")
+                        for p_code, p_pos in paper.portfolio.positions.items():
+                            p_icon = "🟢" if p_pos.profit_pct >= 0 else "🔴"
+                            trade_lines.append(f"     {p_icon} {p_pos.stock_name} {p_pos.current_price:.2f}元 {p_pos.profit_pct:+.2f}%")
+                    pnl = (paper.portfolio.total_value - 100000) / 100000 * 100
+                    trade_lines.append(f"  💰 账户收益: {paper.portfolio.total_value:,.2f}元 ({pnl:+.2f}%)")
+                    notify(config, "📊 今日交易总结", "\n".join(trade_lines))
+                except Exception as e:
+                    logger.debug("每日交易总结推送失败: %s", e)
+
+                # ── 策略回测（每日收盘后自动运行） ──
+                try:
+                    from src.backtest import backtest_scoring_strategy
+                    from src.performance import record_daily_result
+                    from src.optimizer import auto_optimize, get_param_summary, refresh_strategies
+                    bt_lines = ["📈 **策略回测 · 评分系统**", ""]
+                    bt_total = 0.0
+                    bt_count = 0
+                    bt_wins = 0
+                    for bt_code, bt_name in stocks.items():
+                        bt_kline = fetch_kline(bt_code, 365)
+                        if bt_kline is not None:
+                            bt_r = backtest_scoring_strategy(bt_code, bt_name, bt_kline)
+                            bt_icon = "+" if bt_r.total_return > 0 else ""
+                            bt_lines.append(f"  {bt_icon} {bt_name}({bt_code}): {bt_r.total_return:+.1f}% 胜率{bt_r.win_rate:.0f}%")
+                            bt_total += bt_r.total_return
+                            bt_count += 1
+                            if bt_r.total_return > 0:
+                                bt_wins += 1
+                    if bt_count > 0:
+                        avg_bt = bt_total / bt_count
+                        win_rate_bt = bt_wins / bt_count * 100
+                        bt_lines.append("")
+                        bt_lines.append(f"  📊 平均收益率: {avg_bt:+.1f}% | 胜率: {win_rate_bt:.0f}%")
+                        trend = record_daily_result(avg_bt, win_rate_bt, bt_count)
+                        bt_lines.append(f"  {trend}")
+                        # 自动优化
+                        opt_result = auto_optimize(avg_bt, win_rate_bt)
+                        if opt_result["adjusted"]:
+                            bt_lines.append("")
+                            bt_lines.append(f"  🔧 自动优化: {opt_result['reason']}")
+                            for k, v in opt_result["changes"].items():
+                                label_map = {"buy_threshold": "买入阈值", "sell_threshold": "卖出阈值",
+                                         "stop_loss": "止损", "trail_activate": "止盈启动",
+                                         "trail_pullback": "止盈回撤"}
+                                label = label_map.get(k, k)
+                                bt_lines.append(f"    {label}: {v['from']} → {v['to']}")
+                        # 每日策略分配刷新
+                        try:
+                            strategies = refresh_strategies()
+                            bt_lines.append("")
+                            bt_lines.append(f"  📋 策略分配:")
+                            strat_counts = {"激进": 0, "稳健": 0, "保守": 0}
+                            for s_info in strategies.values():
+                                strat_counts[s_info["strategy"]] = strat_counts.get(s_info["strategy"], 0) + 1
+                            for s_name, s_tmpl in [("激进", "买入>40"), ("稳健", "买入>45"), ("保守", "买入>50")]:
+                                if strat_counts.get(s_name, 0) > 0:
+                                    bt_lines.append(f"    {s_name}: {strat_counts[s_name]}只")
+                        except: pass
+                    notify(config, "📈 策略回测", "\n".join(bt_lines))
+                except Exception as e:
+                    logger.debug("策略回测失败: %s", e)
+
+                # ── 板块热点推送（每日一次） ──
+                try:
+                    from src.fetcher import fetch_sector_performance
+                    sectors = fetch_sector_performance()
+                    if sectors:
+                        sec_lines = ["🏆 **今日板块热点 TOP5**", ""]
+                        for i, s in enumerate(sectors[:5], 1):
+                            icon = "📈" if s["change_pct"] >= 0 else "📉"
+                            sec_lines.append(f"  {i}. {icon} {s['name']} {s['change_pct']:+.2f}%")
+                        notify(config, "🏆 板块热点", "\n".join(sec_lines))
+                except Exception as e:
+                    logger.debug("板块热点推送失败: %s", e)
+
+                # ── 每周交易总结（周五盘后） ──
+                if now.weekday() == 4:
+                    try:
+                        sells = [t for t in paper.portfolio.trades if t.action == "卖出"]
+                        wins = [t for t in sells if t.profit_pct > 0]
+                        total_sells = len(sells)
+                        week_trades = [t for t in paper.portfolio.trades if (now - datetime.strptime(t.date, "%Y-%m-%d")).days < 7]
+                        week_sells = [t for t in week_trades if t.action == "卖出"]
+                        week_wins = [t for t in week_sells if t.profit_pct > 0]
+                        week_lines = ["📊 **本周交易总结**", ""]
+                        week_lines.append(f"  交易次数: {len(week_trades)} 次")
+                        week_lines.append(f"  卖出: {len(week_sells)} 次 | 盈利: {len(week_wins)} 次")
+                        if week_sells:
+                            win_rate = len(week_wins) / len(week_sells) * 100
+                            total_profit = sum(t.profit_amount for t in week_sells if t.profit_amount)
+                            week_lines.append(f"  胜率: {win_rate:.1f}% | 总盈亏: {total_profit:+.2f}元")
+                        if sells:
+                            all_win_rate = len(wins) / total_sells * 100 if total_sells > 0 else 0
+                            all_profit = sum(t.profit_amount for t in sells if t.profit_amount)
+                            week_lines.append("")
+                            week_lines.append(f"  📈 历史累计: 胜率{all_win_rate:.1f}% 盈亏{all_profit:+.2f}元")
+                        week_lines.append("")
+                        ret = (paper.portfolio.total_value - 100000) / 100000 * 100
+                        week_lines.append(f"  💰 账户收益: {ret:+.2f}%")
+                        notify(config, "📊 每周交易总结", "\n".join(week_lines))
+                    except Exception as e:
+                        logger.debug("每周总结推送失败: %s", e)
+        else:
+            logger.debug("非交易时间，跳过")
+
+        # 15:00后自动退出（不管盘后总结是否已执行）
+        if now_time >= dt_time(15, 0):
+            if not summary_done_today:
+                summary_done_today = True
+            logger.info("15:00 收盘，监控停止")
+            break
+
+        time.sleep(interval)
+
+
+if __name__ == "__main__":
+    main()
