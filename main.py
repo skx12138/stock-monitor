@@ -1126,15 +1126,13 @@ def main():
                 summary_done_today = True
                 logger.info("生成盘后总结...")
                 summary = _generate_summary(config, today_signals, paper)
-                if summary:
-                    notify(config, "📋 今日盘后总结", summary)
 
-                # ── 策略回测（每日收盘后自动运行） ──
+                # ── 策略回测合并到盘后总结 ──
                 try:
                     from src.backtest import backtest_scoring_strategy
                     from src.performance import record_daily_result
                     from src.optimizer import auto_optimize, get_param_summary, refresh_strategies
-                    bt_lines = ["📈 **策略回测 · 评分系统**", ""]
+                    bt_lines = []
                     bt_total = 0.0
                     bt_count = 0
                     bt_wins = 0
@@ -1151,36 +1149,30 @@ def main():
                     if bt_count > 0:
                         avg_bt = bt_total / bt_count
                         win_rate_bt = bt_wins / bt_count * 100
-                        bt_lines.append("")
-                        bt_lines.append(f"  📊 平均收益率: {avg_bt:+.1f}% | 胜率: {win_rate_bt:.0f}%")
+                        summary += "\n\n📈 **策略回测**\n"
+                        summary += f"  📊 平均收益率: {avg_bt:+.1f}% | 胜率: {win_rate_bt:.0f}%\n"
                         trend = record_daily_result(avg_bt, win_rate_bt, bt_count)
-                        bt_lines.append(f"  {trend}")
-                        # 自动优化
+                        summary += f"  {trend}\n"
                         opt_result = auto_optimize(avg_bt, win_rate_bt)
                         if opt_result["adjusted"]:
-                            bt_lines.append("")
-                            bt_lines.append(f"  🔧 自动优化: {opt_result['reason']}")
+                            summary += f"  🔧 {opt_result['reason']}\n"
                             for k, v in opt_result["changes"].items():
                                 label_map = {"buy_threshold": "买入阈值", "sell_threshold": "卖出阈值",
                                          "stop_loss": "止损", "trail_activate": "止盈启动",
                                          "trail_pullback": "止盈回撤"}
-                                label = label_map.get(k, k)
-                                bt_lines.append(f"    {label}: {v['from']} → {v['to']}")
-                        # 每日策略分配刷新
+                                summary += f"    {label_map.get(k,k)}: {v['from']} → {v['to']}\n"
                         try:
                             strategies = refresh_strategies()
-                            bt_lines.append("")
-                            bt_lines.append(f"  📋 策略分配:")
                             strat_counts = {"激进": 0, "稳健": 0, "保守": 0}
                             for s_info in strategies.values():
                                 strat_counts[s_info["strategy"]] = strat_counts.get(s_info["strategy"], 0) + 1
-                            for s_name, s_tmpl in [("激进", "买入>40"), ("稳健", "买入>45"), ("保守", "买入>50")]:
-                                if strat_counts.get(s_name, 0) > 0:
-                                    bt_lines.append(f"    {s_name}: {strat_counts[s_name]}只")
+                            summary += f"  📋 策略: 激进{strat_counts['激进']}只/稳健{strat_counts['稳健']}只/保守{strat_counts['保守']}只\n"
                         except: pass
-                    notify(config, "📈 策略回测", "\n".join(bt_lines))
                 except Exception as e:
                     logger.debug("策略回测失败: %s", e)
+
+                if summary:
+                    notify(config, "📋 收盘总览", summary)
 
                 # ── 板块热点推送（每日一次） ──
                 try:
