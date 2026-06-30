@@ -1217,11 +1217,11 @@ def main():
         else:
             logger.debug("非交易时间，跳过")
 
-        # 15:00后自动退出（不管盘后总结是否已执行）
-        if now_time >= dt_time(15, 0):
+        # 15:05后自动退出
+        if now_time >= dt_time(15, 5):
             if not summary_done_today:
                 summary_done_today = True
-            logger.info("15:00 收盘，监控停止")
+            logger.info("15:05 收盘，监控停止")
             break
 
         time.sleep(interval)
