@@ -609,6 +609,17 @@ def add_stock(code: str, name: str = "") -> str:
     with open("config.yaml", "w", encoding="utf-8") as f:
         yaml.dump(config, f, allow_unicode=True, default_flow_style=False)
 
+    # 同步到GitHub
+    try:
+        import subprocess, os
+        subprocess.run(["git", "config", "user.name", "webapp"], capture_output=True, cwd=os.path.dirname(__file__))
+        subprocess.run(["git", "config", "user.email", "webapp@local"], capture_output=True, cwd=os.path.dirname(__file__))
+        subprocess.run(["git", "add", "config.yaml"], capture_output=True, cwd=os.path.dirname(__file__))
+        subprocess.run(["git", "commit", "-m", f"web: add {code} {name}"], capture_output=True, cwd=os.path.dirname(__file__))
+        subprocess.run(["git", "push"], capture_output=True, cwd=os.path.dirname(__file__))
+    except:
+        pass
+
     return f"✅ 已添加 {name}({code}) 到监控列表\n下次启动后生效"
 
 
@@ -625,6 +636,17 @@ def remove_stock(code: str) -> str:
     config["stocks"] = stocks
     with open("config.yaml", "w", encoding="utf-8") as f:
         yaml.dump(config, f, allow_unicode=True, default_flow_style=False)
+
+    # 同步到GitHub
+    try:
+        import subprocess, os
+        subprocess.run(["git", "config", "user.name", "webapp"], capture_output=True, cwd=os.path.dirname(__file__))
+        subprocess.run(["git", "config", "user.email", "webapp@local"], capture_output=True, cwd=os.path.dirname(__file__))
+        subprocess.run(["git", "add", "config.yaml"], capture_output=True, cwd=os.path.dirname(__file__))
+        subprocess.run(["git", "commit", "-m", f"web: remove {code}"], capture_output=True, cwd=os.path.dirname(__file__))
+        subprocess.run(["git", "push"], capture_output=True, cwd=os.path.dirname(__file__))
+    except:
+        pass
 
     return f"✅ 已移除 {name}({code})"
 
