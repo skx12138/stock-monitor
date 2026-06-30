@@ -449,6 +449,34 @@ def main():
                         t = bullish + bearish + neutral
                         ti = "\U0001f4c8" if bullish >= bearish else "\U0001f4c9"
                         pre_lines.insert(1, f"{ti} 整体趋势: 看涨{bullish}只 / 看跌{bearish}只 / 震荡{neutral}只")
+                    # ── 持仓风险预警（开盘前危险信号） ──
+                    danger_lines = []
+                    for d_code, d_pos in paper.portfolio.positions.items():
+                        d_name = d_pos.stock_name
+                        d_kline = fetch_kline(d_code, 60)
+                        if d_kline is None or len(d_kline) < 20: continue
+                        d_closes = d_kline["close"].values.astype(float)
+                        d_volumes = d_kline["volume"].values.astype(float) if "volume" in d_kline.columns else np.array([])
+                        d_highs = d_kline["high"].values.astype(float) if "high" in d_kline.columns else d_closes
+                        d_lows = d_kline["low"].values.astype(float) if "low" in d_kline.columns else d_closes
+                        d_pred = predict_tomorrow(d_closes, d_highs, d_lows, d_volumes, d_pos.current_price)
+                        # 检查昨日是否接近跌停
+                        prev_chg_d = (d_closes[-1] / d_closes[-2] - 1) * 100 if len(d_closes) >= 2 else 0
+                        near_limit = prev_chg_d <= -8
+                        pred_bearish = d_pred["direction"] == "看跌" and d_pred["confidence"] >= 60
+                        if near_limit or pred_bearish:
+                            warn = ""
+                            if near_limit:
+                                warn = f"昨日大跌{prev_chg_d:.0f}%"
+                            if pred_bearish:
+                                if warn: warn += " | "
+                                warn += f"预测看跌({d_pred['confidence']}%)"
+                            icon = "\U0001f6a8"
+                            danger_lines.append(f"  {icon} {d_name}({d_code}): ⚠️ {warn}")
+                    if danger_lines:
+                        pre_lines.append("")
+                        pre_lines.append(f"\U0001f6a8 **持仓风险预警**")
+                        pre_lines.extend(danger_lines)
                     # 先推送开盘前分析
                     notify(config, "\U0001f305 开盘前分析", "\n".join(pre_lines))
                     # ── 开盘前自动交易（基于昨日收盘数据） ──
