@@ -11,7 +11,7 @@ notifier:
   qmsg_key: ''
   serverchan_key: ''
   type: wecom
-  wecom_webhook: ''
+  wecom_webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=43fc7d28-c0a7-42a2-bcef-adf0d3007c36
 price_alerts: null
 real_trader:
   credentials_file: credentials.json
@@ -56,5 +56,6 @@ stocks:
   '600580': 卧龙电驱
   '600584': 长电科技
   '600667': 太极实业
+  '600707': 彩虹股份
   '603501': 韦尔股份
   '603629': 利通电子
