@@ -805,6 +805,8 @@ class PaperTrading:
         # T+1: 当天买入不能当天卖出
         if pos.buy_date == date.today().isoformat():
             return None
+        # 符合100股整数倍
+        shares = int(shares / 100) * 100
         shares = min(shares, pos.shares)
         if shares <= 0:
             return None
