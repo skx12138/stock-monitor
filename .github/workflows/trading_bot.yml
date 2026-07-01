@@ -37,5 +37,6 @@ jobs:
           git add papertrade_data.json -f
           git diff --quiet && git diff --staged --quiet || \
             git commit -m "auto: update trading data $(date +'%Y-%m-%d')"
-          git pull --rebase origin master || true
-          git push --force
+          git fetch origin master
+          git rebase origin/master || true
+          git push origin master --force
