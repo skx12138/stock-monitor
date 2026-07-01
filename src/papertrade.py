@@ -334,12 +334,12 @@ class PaperTrading:
             if profit >= 30:
                 sell_shares = pos.shares  # 全清
                 profit_str = f"止盈{profit:.1f}%清仓"
-            elif profit >= 20:
-                sell_shares = pos.shares // 4  # 卖1/4
-                profit_str = f"止盈{profit:.1f}%卖1/4"
-            elif profit >= 12:
-                sell_shares = pos.shares // 4  # 卖1/4
-                profit_str = f"止盈{profit:.1f}%卖1/4"
+            elif profit >= 20 and pos.shares >= 200:
+                sell_shares = min(100, pos.shares // 2)  # 至少卖100股
+                profit_str = f"止盈{profit:.1f}%卖{sell_shares}股"
+            elif profit >= 12 and pos.shares >= 200:
+                sell_shares = min(100, pos.shares // 2)  # 至少卖100股
+                profit_str = f"止盈{profit:.1f}%卖{sell_shares}股"
 
             if sell_shares > 0:
                 trade = self._sell_partial(code, current_price, sell_shares, profit_str)
