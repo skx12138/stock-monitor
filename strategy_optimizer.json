@@ -47,9 +47,9 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 53.3,
+      "return": 58.5,
       "win_rate": 43.8,
-      "drawdown": 12.1
+      "drawdown": 12.0
     },
     "002931": {
       "strategy": "激进",
@@ -61,7 +61,7 @@
         "trail_pullback": 6,
         "desc": "较低门槛买入+宽止损，适合ETF和强势股"
       },
-      "return": 108.6,
+      "return": 113.8,
       "win_rate": 28.6,
       "drawdown": 19.1
     },
@@ -89,8 +89,8 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 17.9,
-      "win_rate": 62.5,
+      "return": 21.0,
+      "win_rate": 55.6,
       "drawdown": 22.3
     },
     "588200": {
@@ -103,7 +103,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 22.7,
+      "return": 22.0,
       "win_rate": 50.0,
       "drawdown": 7.2
     },
@@ -117,9 +117,9 @@
         "trail_pullback": 6,
         "desc": "较低门槛买入+宽止损，适合ETF和强势股"
       },
-      "return": 133.9,
-      "win_rate": 68.8,
-      "drawdown": 8.3
+      "return": 136.6,
+      "win_rate": 70.6,
+      "drawdown": 8.2
     },
     "600183": {
       "strategy": "稳健",
@@ -131,7 +131,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 65.5,
+      "return": 64.2,
       "win_rate": 52.6,
       "drawdown": 7.9
     },
@@ -145,7 +145,7 @@
         "trail_pullback": 6,
         "desc": "较低门槛买入+宽止损，适合ETF和强势股"
       },
-      "return": 73.4,
+      "return": 73.1,
       "win_rate": 87.5,
       "drawdown": 9.8
     },
@@ -159,7 +159,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 53.4,
+      "return": 52.7,
       "win_rate": 44.4,
       "drawdown": 10.4
     },
@@ -173,8 +173,8 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 49.8,
-      "win_rate": 68.8,
+      "return": 49.2,
+      "win_rate": 66.7,
       "drawdown": 9.1
     },
     "600580": {
@@ -187,8 +187,8 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 11.1,
-      "win_rate": 36.8,
+      "return": 7.4,
+      "win_rate": 35.0,
       "drawdown": 18.7
     },
     "600584": {
@@ -201,7 +201,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 20.6,
+      "return": 19.2,
       "win_rate": 42.9,
       "drawdown": 8.1
     },
@@ -215,7 +215,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 26.1,
+      "return": 25.3,
       "win_rate": 62.5,
       "drawdown": 9.6
     },
@@ -229,7 +229,7 @@
         "trail_pullback": 3,
         "desc": "高门槛买入+紧止损，适合弱势股"
       },
-      "return": 2.8,
+      "return": 3.0,
       "win_rate": 25.0,
       "drawdown": 10.2
     },
@@ -243,7 +243,7 @@
         "trail_pullback": 6,
         "desc": "较低门槛买入+宽止损，适合ETF和强势股"
       },
-      "return": 100.5,
+      "return": 96.9,
       "win_rate": 58.8,
       "drawdown": 13.7
     }
