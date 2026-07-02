@@ -1160,10 +1160,14 @@ def main():
             except Exception as e:
                 logger.debug("大盘风险检测失败: %s", e)
 
-            # ── 合并推送本轮消息（技术信号+交易+异动）──
+            # ── 合并推送本轮消息（技术信号+交易+异动）—— 每5分钟一次，有交易立即推 ──
             important_msgs = [m for m in batch_messages if "🔄" in m]
             signal_msgs = [m for m in batch_messages if m.startswith("  · ")]
-            if signal_msgs or intraday_events:
+            flash_key = f"flash_{now.strftime('%Y%m%d_%H')}_{now.minute // 5}"
+            has_important = bool(important_msgs)
+            if has_important or (flash_key not in intraday_alerts and (signal_msgs or intraday_events)):
+                if not has_important:
+                    intraday_alerts.add(flash_key)
                 merged_lines = []
                 merged_lines.append(f"📊 **盘中快报** · {now.strftime('%H:%M')}")
                 if signal_msgs:
