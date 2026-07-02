@@ -596,7 +596,16 @@ def main():
                                 buy_trade = paper._buy_position(c["code"], c["name"], price, buy_ratio,
                                 f"尾盘买入·{pred.get('target_label','明日')}{pred['direction'] if k_pred is not None else ''}评分{c['score']}", add_count=0)
                                 if buy_trade:
-                                    notify(config, "🔄 尾盘买入", f"尾盘买入 {c['name']}({c['code']}) {price:.2f}元")
+                                    pos_info = paper.portfolio.positions.get(c["code"])
+                                    pos_str = f""
+                                    if pos_info:
+                                        pos_str = f"\n📦 持仓: {pos_info.shares}股 均价{pos_info.buy_price:.2f} 盈亏{pos_info.profit_pct:+.2f}%"
+                                    pred_str = pred['direction'] if k_pred is not None else ''
+                                    notify(config, "🔄 尾盘买入", 
+                                        f"尾盘买入 {c['name']}({c['code']})\n"
+                                        f"价格: {price:.2f}元×{buy_trade.shares}股\n"
+                                        f"预测: {pred_str} 评分: {c['score']}\n"
+                                        f"仓位: {buy_ratio*100:.0f}%{pos_str}")
                 # 尾盘加仓：大跌日允许补仓摊低成本
                 for c in close_candidates[:6]:
                     if c["code"] in paper.portfolio.positions and c["score"] >= 45:
@@ -633,7 +642,15 @@ def main():
                                         add_trade = paper._buy_position(c["code"], c["name"], price, add_ratio_w,
                                             f"尾盘加仓·评分{c['score']}", add_count=pos.add_count + 1)
                                         if add_trade:
-                                            notify(config, "🔄 尾盘加仓", f"尾盘加仓 {c['name']}({c['code']}) {price:.2f}元")
+                                            pos_info = paper.portfolio.positions.get(c["code"])
+                                            pos_str2 = f""
+                                            if pos_info:
+                                                pos_str2 = f" 📦 {pos_info.shares}股 均价{pos_info.buy_price:.2f} 盈亏{pos_info.profit_pct:+.2f}%"
+                                            pred_str2 = pred['direction'] if k_pred is not None else ''
+                                            notify(config, "🔄 尾盘加仓", 
+                                                f"尾盘加仓 {c['name']}({c['code']})\n"
+                                                f"价格: {price:.2f}元×{add_trade.shares}股\n"
+                                                f"预测: {pred_str2} 评分: {c['score']}{pos_str2}")
                 # 尾盘卖出：大跌日不止损（避免割在最低点）
                 # 检查今天是否普跌日
                 today_is_bloody = False
@@ -657,7 +674,12 @@ def main():
                         # 即使大跌日，亏损超过8%也止损
                         sell_action = paper._sell_position(pcode, sell_price, f"尾盘止损{pos.profit_pct:.1f}%（普跌日放宽至8%）")
                     if sell_action:
-                        notify(config, "🔄 尾盘卖出", f"尾盘卖出 {pos.stock_name}({pcode}) {sell_price:.2f}元")
+                        profit_icon = "🟢" if sell_action.profit_pct >= 0 else "🔴"
+                        notify(config, "🔄 尾盘卖出", 
+                            f"尾盘卖出 {pos.stock_name}({pcode})\n"
+                            f"价格: {sell_price:.2f}元×{sell_action.shares}股\n"
+                            f"盈亏: {profit_icon} {sell_action.profit_pct:+.2f}%\n"
+                            f"原因: {sell_action.reason}")
 
                 # ── 明日预测汇总（14:50-15:00，仅推送一次） ──
                 if not pred_done_today and dt_time(14, 55) <= now_time <= dt_time(15, 0):
