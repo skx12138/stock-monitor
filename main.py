@@ -812,6 +812,16 @@ def main():
                     pos_str = ""
                     if pos_info:
                         pos_str = f"\n📦 持仓: {pos_info.shares}股 均价{pos_info.buy_price:.2f} 市值{pos_info.shares*pos_info.current_price:.0f}元 总盈亏{pos_info.profit_pct:+.2f}%"
+                    # 买入区间参考（基于ATR）
+                    range_str = ""
+                    try:
+                        atr_v = score_info.get("atr", 0)
+                        if atr_v > 0 and trade.price > 0:
+                            atr_p = atr_v / trade.price * 100
+                            r_low = trade.price - atr_v * 0.5
+                            r_high = trade.price + atr_v * 0.5
+                            range_str = f"\n📏 参考区间: [{r_low:.2f} ~ {r_high:.2f}] ATR({atr_p:.1f}%)"
+                    except: pass
                     # 重点提醒交易（带时间+详细原因）
                     trade_icon = "🟢" if "买入" in trade.action or trade.action == "加仓" else ("🔴" if "卖出" in trade.action else "🔄")
                     is_t = " 做T" if trade.reason and "做T" in trade.reason else ""
@@ -824,6 +834,7 @@ def main():
                         f"数量: {trade.shares}股\n"
                         f"金额: {trade.price*trade.shares:.0f}元{profit_extra}\n"
                         f"原因: {trade.reason}"
+                        f"{range_str}"
                         f"{pos_str}")
 
             paper.update_prices(current_prices)
