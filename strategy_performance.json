@@ -5,6 +5,12 @@
       "avg_return": 51.54,
       "win_rate": 100.0,
       "stock_count": 15
+    },
+    {
+      "date": "2026-07-02",
+      "avg_return": 43.97,
+      "win_rate": 100.0,
+      "stock_count": 22
     }
   ],
   "best_params": {}
