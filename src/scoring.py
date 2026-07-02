@@ -378,6 +378,15 @@ def compute_score(closes: np.ndarray, volumes: np.ndarray,
     elif rsi_info["signal"] == "bearish":
         risks.append(rsi_info["desc"])
 
+    # ── 5.5. 背离评分（10分）—— 顶背离/底背离检测 ──
+    diverge_info = _score_divergence(closes, highs, lows, price)
+    score += diverge_info["score"]
+    details["背离"] = diverge_info
+    if diverge_info["signal"] == "bullish":
+        reasons.append(diverge_info["desc"])
+    elif diverge_info["signal"] == "bearish":
+        risks.append(diverge_info["desc"])
+
     # ── 6. 箱体/支撑评分（10分）—— 箱底买箱顶卖 ──
     box_info = _score_box_support(closes, price)
     score += box_info["score"]
@@ -834,6 +843,81 @@ def _score_fund_flow(fund_flow: Optional[dict], weight: int) -> dict:
         desc = f"主力大幅流出{abs(main_net)/1e8:.1f}亿💸"
         signal = "bearish"
 
+    return {"score": score, "desc": desc, "signal": signal}
+
+
+def _score_divergence(closes, highs, lows, price) -> dict:
+    """MACD/RSI背离评分：顶背离看跌，底背离看涨（10分制）
+    
+    底背离：价格创新低，指标没创新低 → 下跌动能衰竭 → 看涨
+    顶背离：价格创新高，指标没创新高 → 上涨动能衰竭 → 看跌
+    """
+    if len(closes) < 30:
+        return {"score": 0, "desc": "数据不足", "signal": "neutral"}
+    
+    from src.signals import _calc_rsi, _ema, _sma
+    
+    # 找近40日内的价格低点和高点
+    period = min(40, len(closes))
+    recent = closes[-period:]
+    recent_rsi = np.array([_calc_rsi(closes[:i+1], 14) for i in range(len(closes)-period, len(closes))])
+    recent_rsi = recent_rsi[~np.isnan(recent_rsi)]
+    
+    score, signal, desc = 0, "neutral", ""
+    
+    if len(recent) < 20:
+        return {"score": 0, "desc": "", "signal": "neutral"}
+    
+    # ── MACD底背离检测 ──
+    ema12 = _ema(recent, 12)
+    ema26 = _ema(recent, 26)
+    if len(ema12[~np.isnan(ema12)]) < 15:
+        return {"score": 0, "desc": "", "signal": "neutral"}
+    
+    macd_line = ema12 - ema26
+    macd_valid = ~np.isnan(macd_line)
+    
+    # 找价格的两个低点（相隔至少5根K线）
+    half = len(recent) // 2
+    first_half = recent[:half]
+    second_half = recent[half:]
+    first_low_idx = np.argmin(first_half)
+    second_low_idx = half + np.argmin(second_half)
+    first_low = recent[first_low_idx]
+    second_low = recent[second_low_idx]
+    
+    # MACD底背离：价格新低但MACD没新低
+    if second_low < first_low and second_low_idx - first_low_idx >= 5:
+        macd_first = macd_line[macd_valid][first_low_idx] if first_low_idx < len(macd_line[macd_valid]) else 0
+        macd_second = macd_line[macd_valid][second_low_idx] if second_low_idx < len(macd_line[macd_valid]) else 0
+        if macd_second > macd_first:
+            score += 4
+            desc += "MACD底背离"
+            signal = "bullish"
+    
+    # ── RSI底背离检测 ──
+    if len(recent_rsi) > 15:
+        rsi_first = recent_rsi[first_low_idx] if first_low_idx < len(recent_rsi) else 50
+        rsi_second = recent_rsi[second_low_idx] if second_low_idx < len(recent_rsi) else 50
+        if second_low < first_low and rsi_second > rsi_first:
+            score += 3
+            if desc: desc += "+"
+            desc += "RSI底背离"
+            signal = "bullish"
+    
+    # ── 成交量确认 ──
+    if signal == "bullish":
+        vols_second = np.mean(recent[-5:])
+        vols_first = np.mean(recent[-15:-10]) if len(recent) >= 15 else vols_second
+        vol_ratio = vols_second / vols_first if vols_first > 0 else 1
+        if vol_ratio < 0.8:  # 缩量底背离更可靠
+            score += 2
+            desc += " 缩量确认"
+        if price > _sma(highs[-20:], 10)[-1] if len(highs) >= 20 else False:
+            score += 1
+            desc += " 突破短期高"
+    
+    desc = desc.strip() or "无背离"
     return {"score": score, "desc": desc, "signal": signal}
 
 

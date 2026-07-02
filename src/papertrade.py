@@ -1226,6 +1226,17 @@ class PaperTrading:
                         break
         except: pass
         
+        # ── 背离确认（底背离时加仓更积极） ──
+        try:
+            from src.scoring import _score_divergence
+            highs_arr = kline_df["high"].values.astype(float) if "high" in kline_df.columns else c_closes
+            lows_arr = kline_df["low"].values.astype(float) if "low" in kline_df.columns else c_closes
+            dv_info = _score_divergence(c_closes, highs_arr, lows_arr, price)
+            if dv_info["signal"] == "bullish":
+                ratio *= 1.3  # 底背离确认，加仓+30%
+                logger.info("底背离确认，%s 低吸加仓比例+30%%至%.1f%%", name, ratio*100)
+        except: pass
+        
         rsi_str = f"RSI{rsi:.0f}" if rsi else ""
         return self._buy_position(code, name, price, ratio,
             f"大跌低吸·跌{abs(drop_pct):.1f}%·MA支撑{dev_ma20:.0f}%·{rsi_str}",
