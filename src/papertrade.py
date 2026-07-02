@@ -354,7 +354,8 @@ class PaperTrading:
             if sell_shares > 0:
                 trade = self._sell_partial(code, current_price, sell_shares, profit_str)
 
-        # ── 做T策略：先卖后买，赚取日内差价（T+1规则下，只能卖出昨日持仓） ──
+        # ── 做T策略：先卖后买，赚取日内差价 ──
+        T_SHARES = 200  # 每次做T股数
         if not trade and pos and pos.shares >= 200:
             today_str = date.today().isoformat()
             intraday_chg = score_info.get("change_pct", 0)
@@ -367,18 +368,18 @@ class PaperTrading:
                 self._t_records = {}
             t_key = f"{code}_{today_str}"
             t_info = self._t_records.get(t_key, {"sold": 0, "buy_price": 0})
-            # T卖点：日内涨超3%，卖出100股
-            if intraday_chg >= 3.0 and t_info["sold"] == 0 and can_t_trade >= 200:
+            # T卖点：日内涨超3%，卖出T_SHARES股
+            if intraday_chg >= 3.0 and t_info["sold"] == 0 and can_t_trade >= 400:
                 from datetime import time as _dt_time
                 now_t = datetime.now().time()
                 if _dt_time(9, 30) <= now_t <= _dt_time(14, 30):
-                    t_info["sold"] = 100
+                    t_info["sold"] = T_SHARES
                     t_info["buy_price"] = current_price
                     self._t_records[t_key] = t_info
-                    trade = self._sell_partial(code, current_price, 100, f"做T卖出+{intraday_chg:.1f}%")
-                    logger.info("做T卖出: %s +%.1f%% 卖100股 等回调接回", name, intraday_chg)
+                    trade = self._sell_partial(code, current_price, T_SHARES, f"做T卖出+{intraday_chg:.1f}%")
+                    logger.info("做T卖出: %s +%.1f%% 卖%d股 等回调接回", name, intraday_chg, T_SHARES)
                     if hasattr(self, '_messages') and self._messages is not None:
-                        self._messages.append(f"  🔄 做T卖出 {name}({code}) {current_price:.2f}元×100股")
+                        self._messages.append(f"  🔄 做T卖出 {name}({code}) {current_price:.2f}元×{T_SHARES}股")
             # T买点：日内跌超1.5%或有T仓位未回补，买回
             if not trade and t_info["sold"] > 0:
                 should_buy_back = False
@@ -397,9 +398,9 @@ class PaperTrading:
                     t_info["sold"] = 0
                     self._t_records[t_key] = t_info
                     # 直接买回（用卖出时的金额等量买回）
-                    buy_amount = t_info.get("buy_price", current_price) * 100
+                    buy_amount = t_info.get("buy_price", current_price) * T_SHARES
                     if self.portfolio.cash >= buy_amount * 1.01:
-                        shares = 100
+                        shares = T_SHARES
                         cost = shares * current_price + self._calc_commission(shares * current_price, code)
                         self.portfolio.cash -= cost
                         old = self.portfolio.positions.get(code)
@@ -418,7 +419,7 @@ class PaperTrading:
                         self._save()
                         logger.info("做T买入: %s %.2f元 %s", name, current_price, buy_reason)
                         if hasattr(self, '_messages') and self._messages is not None:
-                            self._messages.append(f"  🔄 做T买入 {name}({code}) {current_price:.2f}元×100股")
+                            self._messages.append(f"  🔄 做T买入 {name}({code}) {current_price:.2f}元×{T_SHARES}股")
 
         # ── 追涨检测（涨太多不买，跌了才是机会） ──
         chase_penalty = 1.0

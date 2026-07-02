@@ -768,9 +768,10 @@ def main():
                         pos_str = f"\n📦 持仓: {pos_info.shares}股 均价{pos_info.buy_price:.2f} 市值{pos_info.shares*pos_info.current_price:.0f}元 总盈亏{pos_info.profit_pct:+.2f}%"
                     # 重点提醒交易（带时间+详细原因）
                     trade_icon = "🟢" if "买入" in trade.action or trade.action == "加仓" else ("🔴" if "卖出" in trade.action else "🔄")
+                    is_t = " 做T" if trade.reason and "做T" in trade.reason else ""
                     profit_extra = f" {trade.profit_pct:+.2f}%" if trade.profit_pct else ""
                     notify(config, f"{trade_icon} 交易提醒",
-                        f"{trade_icon} **{trade.action} {name}({trade.stock_code})**\n"
+                        f"{trade_icon} **{trade.action}{is_t} {name}({trade.stock_code})**\n"
                         f"⏰ {now.strftime('%H:%M:%S')}\n"
                         f"板块: [{get_sector_tag(code)}]\n"
                         f"价格: {trade.price:.2f}元\n"
