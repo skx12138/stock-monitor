@@ -550,6 +550,41 @@ def check_price_alerts(
             if dedup:
                 dedup.mark_sent(stock_code, sig_type)
 
+    # ── 突破追涨信号 ──
+    bk_cfg = signals_cfg.get("breakout", {})
+    if bk_cfg.get("enabled", True) and kline_df is not None and price > 0:
+        try:
+            from src.breakout import detect_breakout
+            bk = detect_breakout(
+                closes,
+                kline_df["high"].values.astype(float) if "high" in kline_df.columns else closes,
+                volumes if volumes is not None else np.array([]),
+                price,
+            )
+            if bk and bk["is_breakout"] and bk["confidence"] >= bk_cfg.get("min_confidence", 60):
+                sig = Signal(
+                    stock_code=stock_code, stock_name=stock_name,
+                    signal_type="breakout", signal_label="突破追涨 📈",
+                    direction="bullish", price=price,
+                    message=(
+                        f"📈 **{stock_name}({stock_code}) 突破追涨**\n"
+                        f"当前价: {price:.2f}\n"
+                        f"突破前高: {bk['breakout_level']:.2f} (+{bk['pct_above_high']:.1f}%)\n"
+                        f"量比: {bk['vol_ratio']:.1f}倍\n"
+                        f"整理区间: {bk['consolidation']['range_pct']:.0f}%\n"
+                        f"可信度: {bk['confidence']}%\n"
+                        f"理由: {bk['reasons']}"
+                    ),
+                    suggestion="突破追涨机会",
+                    change_pct=change_pct,
+                    extra=bk,
+                )
+                signals.append(sig)
+                if dedup:
+                    dedup.mark_sent(stock_code, "breakout")
+        except Exception as e:
+            logger.debug("突破检测异常: %s", e)
+
     return signals
 
 

@@ -26,6 +26,7 @@ from src.dip_buy import (
 )
 from src.backtest import backtest_ma_crossover
 from src.papertrade import PaperTrading
+from src.pricerange import OrderManager
 from src.scoring import compute_score
 from src.sectors import get_sector_tag
 from src.notifier import notify, notify_signal, notify_startup
@@ -300,6 +301,7 @@ def main():
     cycle_count = 0
     last_snapshot: dict = {}     # 上一轮各股状态 {code: (price, score)}
     paper = PaperTrading()
+    order_mgr = OrderManager()
 
     # 盘中价格追踪（用于检测跳水/深V）
     price_history: dict[str, list] = {}  # code -> [(time, price)]
@@ -1348,6 +1350,26 @@ def main():
                 summary_done_today = True
             logger.info("15:05 收盘，监控停止")
             break
+
+        # ── 挂单检查：突破信号触发后生成的挂单，等待价格进入区间 ──
+        try:
+            filled = order_mgr.check_orders(current_state)
+            for oid, f_ord in filled:
+                if f_ord.direction == "buy":
+                    buy_t = paper.execute_range_buy(oid, f_ord, current_state.get(f_ord.stock_code, 0))
+                    if buy_t:
+                        pr = f_ord.price_range
+                        notify(config, "🟢 突破买入",
+                            f"🟢 **突破买入 {f_ord.stock_name}({f_ord.stock_code})**\n"
+                            f"⏰ {now.strftime('%H:%M:%S')}\n"
+                            f"买入价: {buy_t.price:.2f}元\n"
+                            f"数量: {buy_t.shares}股\n"
+                            f"金额: {buy_t.price*buy_t.shares:.0f}元\n"
+                            f"区间: [{pr.buy_lower:.2f}~{pr.buy_upper:.2f}]\n"
+                            f"止损: {pr.stop_loss:.2f}\n"
+                            f"原因: {f_ord.reason}")
+        except Exception as e:
+            logger.debug("挂单检查失败: %s", e)
 
         time.sleep(interval)
 

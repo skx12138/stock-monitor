@@ -1242,6 +1242,38 @@ class PaperTrading:
             f"大跌低吸·跌{abs(drop_pct):.1f}%·MA支撑{dev_ma20:.0f}%·{rsi_str}",
             add_count=pos.add_count + 1)
 
+    def execute_range_buy(self, order_id: str, order, current_price: float):
+        """执行区间买入 — 价格进入买入区间后调用"""
+        from src.pricerange import PendingOrder
+        pr = order.price_range
+        if current_price <= pr.buy_core:
+            ratio = 0.12
+            pos_str = "理想价以下"
+        else:
+            ratio = 0.08
+            pos_str = "理想价以上"
+        return self._buy_position(
+            order.stock_code, order.stock_name, current_price, ratio,
+            f"突破买入·{order.reason}·{pos_str}·区间[{pr.buy_lower:.2f},{pr.buy_upper:.2f}]",
+        )
+
+    def execute_range_sell(self, code: str, price_range):
+        """检查止盈/止损条件，按区间分批卖出"""
+        if code not in self.portfolio.positions:
+            return None
+        pos = self.portfolio.positions[code]
+        # 止损
+        if price_range.stop_loss > 0 and pos.current_price <= price_range.stop_loss:
+            return self._sell_position(code, pos.current_price,
+                f"突破止损·{pos.current_price:.2f}")
+        # 分批止盈
+        for target, ratio in price_range.sell_targets:
+            if pos.current_price >= target and pos.shares >= 200:
+                shares = max(int(pos.shares * ratio / 100) * 100, 100)
+                return self._sell_partial(code, pos.current_price, shares,
+                    f"突破止盈·目标{target:.2f}")
+        return None
+
     def update_prices(self, prices: dict[str, float]):
         """更新持仓股票的当前价，计算实时市值，并记录净值"""
         for code, pos in list(self.portfolio.positions.items()):
