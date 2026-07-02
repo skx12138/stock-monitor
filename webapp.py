@@ -76,7 +76,10 @@ def _get_financial_cached(code: str):
 # 加载配置
 def load_config():
     with open("config.yaml", "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        config = yaml.safe_load(f)
+    if config and "stocks" in config:
+        config["stocks"] = {str(k): v for k, v in config["stocks"].items()}
+    return config
 
 
 @app.route("/")

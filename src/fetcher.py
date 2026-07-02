@@ -40,7 +40,8 @@ INDEX_MAP = {
 }
 
 
-def _code_to_symbol(stock_code: str) -> str:
+def _code_to_symbol(stock_code) -> str:
+    stock_code = str(stock_code)
     prefix = EXCHANGE_MAP.get(stock_code[0], "sh")
     return f"{prefix}{stock_code}"
 

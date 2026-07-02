@@ -41,7 +41,11 @@ logger = logging.getLogger(__name__)
 def load_config(path: str = "config.yaml") -> Optional[dict]:
     try:
         with open(path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f)
+            config = yaml.safe_load(f)
+        # 确保股票代码都是字符串
+        if config and "stocks" in config:
+            config["stocks"] = {str(k): v for k, v in config["stocks"].items()}
+        return config
     except Exception as e:
         logger.error("加载配置文件失败: %s", e)
         return None
