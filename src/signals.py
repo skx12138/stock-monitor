@@ -585,6 +585,43 @@ def check_price_alerts(
         except Exception as e:
             logger.debug("突破检测异常: %s", e)
 
+    # ── 龙回头信号 ──
+    db_cfg = signals_cfg.get("dragon_back", {})
+    if db_cfg.get("enabled", True) and kline_df is not None and price > 0:
+        try:
+            from src.dragon_back import detect_dragon_back
+            highs_db = kline_df["high"].values.astype(float) if "high" in kline_df.columns else closes
+            lows_db = kline_df["low"].values.astype(float) if "low" in kline_df.columns else closes
+            db = detect_dragon_back(
+                closes, highs_db, lows_db,
+                volumes if volumes is not None else np.array([]),
+                price, code=stock_code,
+                lookback=db_cfg.get("lookback_days", 15),
+            )
+            if db and db["is_dragon"] and db["confidence"] >= db_cfg.get("min_confidence", 60):
+                sig = Signal(
+                    stock_code=stock_code, stock_name=stock_name,
+                    signal_type="dragon_back", signal_label="龙回头 🐉",
+                    direction="bullish", price=price,
+                    message=(
+                        f"🐉 **{stock_name}({stock_code}) 龙回头信号**\n"
+                        f"当前价: {price:.2f}\n"
+                        f"回调幅度: {db['drawdown']:.1f}%\n"
+                        f"距涨停: {db['days_since_limit']}天\n"
+                        f"缩量比: {db['vol_ratio']:.1f}\n"
+                        f"可信度: {db['confidence']}%\n"
+                        f"理由: {db['reasons']}"
+                    ),
+                    suggestion="龙回头机会，涨停后回调到支撑位",
+                    change_pct=change_pct,
+                    extra=db,
+                )
+                signals.append(sig)
+                if dedup:
+                    dedup.mark_sent(stock_code, "dragon_back")
+        except Exception as e:
+            logger.debug("龙回头检测异常: %s", e)
+
     return signals
 
 

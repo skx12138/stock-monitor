@@ -11,7 +11,7 @@ notifier:
   qmsg_key: ''
   serverchan_key: ''
   type: wecom
-  wecom_webhook: ''
+  wecom_webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=43fc7d28-c0a7-42a2-bcef-adf0d3007c36
 price_alerts: null
 dip_add:
   add_count: 3       # 每只股最多加仓次数
@@ -54,6 +54,10 @@ signals:
     enabled: true
     lookback: 20
     min_vol_ratio: 1.2
+    min_confidence: 60
+  dragon_back:
+    enabled: true
+    lookback_days: 15
     min_confidence: 60
 stocks:
   '000620': 新华联

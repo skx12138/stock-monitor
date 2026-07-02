@@ -166,6 +166,8 @@ SIGNAL_NAMES_CN = {
     "macd": "MACD金叉/死叉（多空力量对比）",
     "bollinger": "布林带突破（涨太高或跌太低提醒）",
     "volume_breakout": "放量突破（资金异动提醒）",
+    "breakout": "突破追涨（放量突破整理区间）",
+    "dragon_back": "🐉龙回头（涨停后回调到支撑位）",
 }
 
 

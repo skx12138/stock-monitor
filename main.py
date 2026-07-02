@@ -728,6 +728,28 @@ def main():
                 # 收集所有信号，每条带股票名
                 chg_str = f" {sig.change_pct:+.2f}%" if sig.change_pct else ""
                 batch_messages.append(f"  · {sig.stock_name}: {sig.signal_label}{chg_str}")
+                # ── 突破追涨 → 自动生成挂单 ──
+                if sig.signal_type == "breakout" and hasattr(sig, 'extra') and sig.extra:
+                    try:
+                        kline_sig = fetch_kline(sig.stock_code, 60)
+                        if kline_sig is not None and "high" in kline_sig.columns:
+                            from src.signals import calc_atr
+                            c_sig = kline_sig["close"].values.astype(float)
+                            h_sig = kline_sig["high"].values.astype(float)
+                            l_sig = kline_sig["low"].values.astype(float)
+                            atr_sig = calc_atr(c_sig, h_sig, l_sig, 14)
+                            from src.pricerange import calc_buy_range_on_breakout
+                            pr = calc_buy_range_on_breakout(sig.price, atr_sig, sig.extra["consolidation"]["high"])
+                            order_mgr.place_order(sig.stock_code, sig.stock_name, "buy", pr, sig.extra["reasons"])
+                    except Exception as e:
+                        logger.debug("生成突破挂单失败: %s", e)
+                # ── 龙回头 → 发送信号通知 ──
+                if sig.signal_type == "dragon_back":
+                    notify(config, "🐉 龙回头信号",
+                        f"🐉 **龙回头 {sig.stock_name}({sig.stock_code})**\n"
+                        f"信号: {sig.signal_label}\n"
+                        f"建议: {sig.suggestion}\n"
+                        f"\n{sig.message}")
 
             # 评分驱动模拟交易
             stock_snapshots = []  # 用于定期快报
