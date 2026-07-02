@@ -1273,6 +1273,27 @@ def main():
                 paper.buy_recommendations.clear()
                 notify(config, "💡 资金不足推荐", "\n".join(rec_lines))
 
+            # ── 板块集中风险检测（每小时一次） ──
+            sector_key = f"sector_{now.strftime('%Y%m%d_%H')}"
+            if sector_key not in intraday_alerts:
+                sector_map = {}
+                for pc, pp in paper.portfolio.positions.items():
+                    tag = get_sector_tag(pc)
+                    if tag:
+                        if tag not in sector_map: sector_map[tag] = []
+                        sector_map[tag].append(f"{pp.stock_name}({pc})")
+                risk_sectors = {k: v for k, v in sector_map.items() if len(v) >= 3}
+                if risk_sectors:
+                    intraday_alerts.add(sector_key)
+                    sec_lines = ["⚠️ **板块集中风险**", ""]
+                    for s, stocks_list in risk_sectors.items():
+                        sec_lines.append(f"  📉 {s}: {len(stocks_list)}只股票")
+                        for s_name in stocks_list:
+                            sec_lines.append(f"     {s_name}")
+                    sec_lines.append("")
+                    sec_lines.append("  💡 建议: 关注分散风险，同板块持仓不超过3只")
+                    notify(config, "⚠️ 板块集中风险", "\n".join(sec_lines))
+
             # ── 盘后总结（15:00，每天一次） ──
             if not summary_done_today and now_time >= dt_time(15, 0):
                 summary_done_today = True

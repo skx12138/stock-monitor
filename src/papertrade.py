@@ -190,6 +190,14 @@ class PaperTrading:
             sell_th = 48
             stop_loss_pct = 8
 
+        # ── 高波动股止损收紧(ATR>3% → 止损6%) ──
+        atr_val_stop = score_info.get("atr", 0)
+        if atr_val_stop > 0 and current_price > 0:
+            atr_pct_stop = atr_val_stop / current_price * 100
+            if atr_pct_stop > 3 and stop_loss_pct > 6:
+                stop_loss_pct = 6
+                logger.info("高波动ATR%.1f%%，%s 止损收紧至%d%%", atr_pct_stop, name, stop_loss_pct)
+
         # ── 风控1：当日总亏损超过8%时暂停所有新开仓 ──
         daily_loss_limit = -8.0
         current_day_ret = (self.portfolio.total_value - 100000) / 100000 * 100
