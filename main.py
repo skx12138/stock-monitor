@@ -1168,6 +1168,18 @@ def main():
                             logger.info("今日大跌抄底: %s 跌%.1f%% %s", d_display, abs(chg), buy_reason_daily)
                             batch_messages.append(f"  🔄 今日大跌抄底 {d_display}({code}) {price:.2f}元×{buy_daily.shares}股")
 
+                # ── 持仓低吸加仓：持仓股大跌时，检查支撑位是否值得加仓 ──
+                dip_key = f"dip_{code}_{now.strftime('%Y%m%d')}"
+                if code in paper.portfolio.positions and chg <= -3 and chg >= -8 and dip_key not in intraday_alerts:
+                    kline_dip = fetch_kline(code, 60)
+                    if kline_dip is not None and len(kline_dip) > 20:
+                        dip_display = realtime.get("name", name)
+                        dip_trade = paper.dip_add_position(code, dip_display, price, chg, kline_dip)
+                        if dip_trade:
+                            intraday_alerts.add(dip_key)
+                            logger.info("低吸加仓: %s 跌%.1f%% %d股", dip_display, abs(chg), dip_trade.shares)
+                            batch_messages.append(f"  🔄 低吸加仓 {dip_display}({code}) {price:.2f}元×{dip_trade.shares}股")
+
             # ── 大盘风险预警（上证涨跌超1.5%/1%，每小时一次） ──
             try:
                 sh = fetch_market_index("000001")

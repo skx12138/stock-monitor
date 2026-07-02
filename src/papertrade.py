@@ -1100,6 +1100,137 @@ class PaperTrading:
         self._save()
         return trade
 
+    def dip_add_position(self, code, name, price, drop_pct, kline_df, score_info=None):
+        """大跌低吸加仓 — 已有持仓时，大跌检查支撑位是否值得加仓
+
+        Args:
+            code: 股票代码
+            name: 股票名称
+            price: 当前价格
+            drop_pct: 今日跌幅（负数）
+            kline_df: K线DataFrame（至少60日）
+            score_info: 可选，已有的评分信息
+
+        Returns:
+            TradeRecord or None
+        """
+        if code not in self.portfolio.positions:
+            return None
+        pos = self.portfolio.positions[code]
+        
+        # 跌幅范围检查：3%~8%
+        if drop_pct > -3 or drop_pct < -8:
+            return None
+        
+        # T+1拦截
+        if pos.buy_date == date.today().isoformat():
+            return None
+        
+        # 加仓次数上限
+        if pos.add_count >= 3:
+            logger.info("加仓已达上限%d次，%s 跳过低吸", pos.add_count, name)
+            return None
+        
+        # 连续下跌检查
+        if kline_df is None or len(kline_df) < 5:
+            return None
+        c_closes = kline_df["close"].values.astype(float)
+        consecutive = 0
+        for i in range(1, min(6, len(c_closes))):
+            if c_closes[-i] < c_closes[-i-1]:
+                consecutive += 1
+            else:
+                break
+        if consecutive >= 3:
+            logger.info("连跌%d天，%s 跳过低吸", consecutive, name)
+            return None
+        
+        # 次日预判
+        try:
+            from src.predictor import predict_tomorrow
+            vols_arr = kline_df["volume"].values.astype(float) if "volume" in kline_df.columns else np.array([])
+            highs_arr = kline_df["high"].values.astype(float) if "high" in kline_df.columns else c_closes
+            lows_arr = kline_df["low"].values.astype(float) if "low" in kline_df.columns else c_closes
+            pred = predict_tomorrow(c_closes, highs_arr, lows_arr, vols_arr, price)
+            if pred["direction"] == "看跌" and pred["confidence"] >= 55:
+                logger.info("预测看跌(%d%%)，%s 跳过低吸", pred["confidence"], name)
+                return None
+        except: pass
+        
+        # 均线支撑
+        from src.signals import _sma, _calc_rsi
+        ma20 = _sma(c_closes, 20)
+        ma60 = _sma(c_closes, 60) if len(c_closes) >= 60 else np.array([])
+        valid20 = ~np.isnan(ma20)
+        if not valid20.any():
+            return None
+        m20 = ma20[valid20][-1]
+        above_ma20 = price > m20
+        dev_ma20 = (price / m20 - 1) * 100  # 偏离MA20的百分比
+        has_ma_support = above_ma20 and dev_ma20 <= 3  # 在MA20上方3%以内=有支撑
+        if not has_ma_support and len(ma60) > 0:
+            valid60 = ~np.isnan(ma60)
+            if valid60.any():
+                above_ma60 = price > ma60[valid60][-1]
+                has_ma_support = above_ma60
+        if not has_ma_support:
+            return None
+        
+        # RSI检查 (14日): 20~50之间
+        rsi = _calc_rsi(c_closes, 14)
+        if rsi is not None and (rsi > 50 or rsi < 20):
+            return None
+        
+        # 成交量：不能放量
+        if "volume" in kline_df.columns and len(kline_df) >= 5:
+            vols = kline_df["volume"].values.astype(float)[-5:]
+            avg_v = np.mean(vols[:-1]) if len(vols) > 1 else vols[0]
+            vr = vols[-1] / avg_v if avg_v > 0 else 1
+            if vr > 1.8:
+                return None
+        
+        # 大盘环境
+        try:
+            from src.fetcher import fetch_market_index
+            sh = fetch_market_index("000001")
+            if sh and sh.get("change_pct", 0) <= -2:
+                logger.info("大盘跌超2%%，%s 跳过低吸", name)
+                return None
+        except: pass
+        
+        # 评分检查（如果提供了score_info）
+        score_val = score_info.get("score", 50) if score_info else 50
+        if score_val < 50:
+            logger.info("评分%d<50，%s 跳过低吸", score_val, name)
+            return None
+        
+        # 加仓金额
+        if drop_pct >= -5:
+            ratio = 0.05  # 轻仓5%
+        elif drop_pct >= -7:
+            ratio = 0.08  # 中仓8%
+        else:
+            ratio = 0.10  # 重仓10%
+        
+        # 板块热度
+        try:
+            from src.sectors import get_sector_tag
+            from src.fetcher import fetch_sector_performance
+            sector = get_sector_tag(code)
+            if sector:
+                sectors = fetch_sector_performance()
+                for s in sectors or []:
+                    if sector in s.get("name", ""):
+                        if s.get("change_pct", 0) > 1.5:
+                            ratio *= 1.2
+                        break
+        except: pass
+        
+        rsi_str = f"RSI{rsi:.0f}" if rsi else ""
+        return self._buy_position(code, name, price, ratio,
+            f"大跌低吸·跌{abs(drop_pct):.1f}%·MA支撑{dev_ma20:.0f}%·{rsi_str}",
+            add_count=pos.add_count + 1)
+
     def update_prices(self, prices: dict[str, float]):
         """更新持仓股票的当前价，计算实时市值，并记录净值"""
         for code, pos in list(self.portfolio.positions.items()):

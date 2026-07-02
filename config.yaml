@@ -13,6 +13,14 @@ notifier:
   type: wecom
   wecom_webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=43fc7d28-c0a7-42a2-bcef-adf0d3007c36
 price_alerts: null
+dip_add:
+  add_count: 3       # 每只股最多加仓次数
+  enabled: true
+  max_drop: 8.0      # 最大跌幅%
+  min_drop: 3.0      # 最小跌幅%
+  ratio_heavy: 0.10  # 重仓比例（跌7-8%）
+  ratio_light: 0.05  # 轻仓比例（跌3-5%）
+  ratio_medium: 0.08 # 中仓比例（跌5-7%）
 real_trader:
   credentials_file: credentials.json
   dry_run: true
