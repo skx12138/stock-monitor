@@ -71,7 +71,7 @@ class PaperTrading:
         self.portfolio = Portfolio(cash=initial_cash, total_value=initial_cash)
         self.trade_dedup: dict[str, datetime] = {}
         self.trade_cooldown = 0
-        self.max_positions = 10            # 最多同时持仓10只
+        self.max_positions = 999            # 不限制持仓数量
         self.max_total_ratio = 0.80         # 总仓位上限80%
         self.max_sector_ratio = 0.40         # 单板块仓位上限40%
         self.commission = 0.00025      # 股票佣金万2.5
@@ -898,8 +898,18 @@ class PaperTrading:
         except: pass
         shares = int(amount / price / 100) * 100
         if shares < 100:
-            return None
+            # 钱不够100股时，看能买多少
+            shares = int(self.portfolio.cash * 0.9 / price / 100) * 100
+            if shares < 100:
+                logger.info("现金不足(%.0f元)，%s 至少需要%.0f元才能买100股", self.portfolio.cash, name, price*100)
+                return None
         total_cost = shares * price + self._calc_commission(shares * price, code)
+        if total_cost > self.portfolio.cash:
+            # 现金不够，降仓到可承受范围
+            shares = int(shares * 0.8 / 100) * 100
+            if shares < 100:
+                return None
+            total_cost = shares * price + self._calc_commission(shares * price, code)
         self.portfolio.cash -= total_cost
 
         if code in self.portfolio.positions:
