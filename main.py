@@ -1163,13 +1163,25 @@ def main():
             # ── 合并推送本轮消息（技术信号+交易+异动）—— 每5分钟一次，有交易立即推 ──
             important_msgs = [m for m in batch_messages if "🔄" in m]
             signal_msgs = [m for m in batch_messages if m.startswith("  · ")]
+            
+            # 异动/预警立即推送（每轮都推）
+            if intraday_events:
+                ev_lines = [f"🚨 **盘中异动** · {now.strftime('%H:%M')}"]
+                for m in intraday_events:
+                    ev_lines.append(m)
+                if important_msgs:
+                    ev_lines.append("")
+                    for m in important_msgs:
+                        ev_lines.append(m)
+                notify(config, "🚨 盘中异动", "\n".join(ev_lines))
+                intraday_events = []  # 清空已推送的异动
+            
+            # 信号播报每5分钟推一次
             flash_key = f"flash_{now.strftime('%Y%m%d_%H')}_{now.minute // 5}"
-            has_important = bool(important_msgs)
-            if has_important or (flash_key not in intraday_alerts and (signal_msgs or intraday_events)):
-                if not has_important:
+            if important_msgs or (flash_key not in intraday_alerts and signal_msgs):
+                if not important_msgs:
                     intraday_alerts.add(flash_key)
-                merged_lines = []
-                merged_lines.append(f"📊 **盘中快报** · {now.strftime('%H:%M')}")
+                merged_lines = [f"📊 **盘中快报** · {now.strftime('%H:%M')}"]
                 if signal_msgs:
                     for m in signal_msgs:
                         merged_lines.append(m)
@@ -1177,11 +1189,6 @@ def main():
                     if signal_msgs:
                         merged_lines.append("")
                     for m in important_msgs:
-                        merged_lines.append(m)
-                if intraday_events:
-                    if signal_msgs or important_msgs:
-                        merged_lines.append("")
-                    for m in intraday_events:
                         merged_lines.append(m)
                 notify(config, "📊 盘中快报", "\n".join(merged_lines))
 
