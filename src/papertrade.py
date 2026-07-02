@@ -839,6 +839,10 @@ class PaperTrading:
             # ── 大跌日/恐慌错杀保护：不止损等反弹 ──
             elif heavy_drop and drop_analysis in ("恐慌错杀", "加速赶底"):
                 logger.info("暴跌分析[%s]，%s 跳过卖出等反弹", drop_analysis, name)
+            # ── 阴跌卖出：连续3日下跌+累计亏超3%，防止温水煮青蛙 ──
+            elif consecutive_days_down >= 3 and pos.profit_pct < -3:
+                logger.info("阴跌检测: %s 连跌%d天 累计亏%.1f%%，止损卖出", name, consecutive_days_down, abs(pos.profit_pct))
+                trade = self._sell_position(code, current_price, f"阴跌止损·连跌{consecutive_days_down}天·亏{abs(pos.profit_pct):.0f}%")
             elif score < sell_th:
                 # 大盘大跌日(>1.5%)或市场恐慌时，评分卖出降为卖一半
                 from src.scoring import get_market_sentiment
