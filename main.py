@@ -695,6 +695,7 @@ def main():
             
             # 收集本轮所有消息，合并推送
             batch_messages = []
+            paper._messages = batch_messages  # 做T消息钩子
             
             signals, briefing_parts = run_once(config, dedup, briefed_today, last_date)
             # 行情简报已取消

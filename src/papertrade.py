@@ -38,6 +38,8 @@ class Position:
     profit_amount: float = 0.0
     peak_price: float = 0.0
     add_count: int = 0            # 加仓次数
+    hold_since: str = ""           # 最早买入日期（用于做T判断）
+
 
 @dataclass
 class TradeRecord:
@@ -88,6 +90,7 @@ class PaperTrading:
         self._sector_cache_time = 0
         self._load()
         self.buy_recommendations: list[str] = []  # 推荐买入但因资金不足未成交的股票
+        self._messages = None  # 外部消息列表钩子，用于做T通知
 
     def _get_sector_tag(self, code: str) -> str:
         try:
@@ -350,6 +353,72 @@ class PaperTrading:
 
             if sell_shares > 0:
                 trade = self._sell_partial(code, current_price, sell_shares, profit_str)
+
+        # ── 做T策略：先卖后买，赚取日内差价（T+1规则下，只能卖出昨日持仓） ──
+        if not trade and pos and pos.shares >= 200:
+            today_str = date.today().isoformat()
+            intraday_chg = score_info.get("change_pct", 0)
+            # 检查是否有昨日持仓可做T
+            can_t_trade = pos.shares  # 全部可T卖出，因为buy_date被更新为今日
+            if pos.hold_since and pos.hold_since < today_str:
+                can_t_trade = pos.shares
+            # 初始化T交易记录
+            if not hasattr(self, '_t_records'):
+                self._t_records = {}
+            t_key = f"{code}_{today_str}"
+            t_info = self._t_records.get(t_key, {"sold": 0, "buy_price": 0})
+            # T卖点：日内涨超3%，卖出100股
+            if intraday_chg >= 3.0 and t_info["sold"] == 0 and can_t_trade >= 200:
+                from datetime import time as _dt_time
+                now_t = datetime.now().time()
+                if _dt_time(9, 30) <= now_t <= _dt_time(14, 30):
+                    t_info["sold"] = 100
+                    t_info["buy_price"] = current_price
+                    self._t_records[t_key] = t_info
+                    trade = self._sell_partial(code, current_price, 100, f"做T卖出+{intraday_chg:.1f}%")
+                    logger.info("做T卖出: %s +%.1f%% 卖100股 等回调接回", name, intraday_chg)
+                    if hasattr(self, '_messages') and self._messages is not None:
+                        self._messages.append(f"  🔄 做T卖出 {name}({code}) {current_price:.2f}元×100股")
+            # T买点：日内跌超1.5%或有T仓位未回补，买回
+            if not trade and t_info["sold"] > 0:
+                should_buy_back = False
+                buy_reason = ""
+                # 跌超1.5%接回
+                if intraday_chg <= -1.5:
+                    should_buy_back = True
+                    buy_reason = f"做T买入(跌{intraday_chg:.1f}%)"
+                # 收盘前强制接回（14:50后）
+                from datetime import time as _dt_time
+                now_t = datetime.now().time()
+                if _dt_time(14, 50) <= now_t <= _dt_time(15, 0):
+                    should_buy_back = True
+                    buy_reason = "做T买入(收盘强制接回)"
+                if should_buy_back:
+                    t_info["sold"] = 0
+                    self._t_records[t_key] = t_info
+                    # 直接买回（用卖出时的金额等量买回）
+                    buy_amount = t_info.get("buy_price", current_price) * 100
+                    if self.portfolio.cash >= buy_amount * 1.01:
+                        shares = 100
+                        cost = shares * current_price + self._calc_commission(shares * current_price, code)
+                        self.portfolio.cash -= cost
+                        old = self.portfolio.positions.get(code)
+                        if old:
+                            new_shares = old.shares + shares
+                            avg_price = (old.total_cost + cost) / new_shares
+                            self.portfolio.positions[code] = Position(
+                                stock_code=code, stock_name=name,
+                                buy_date=old.buy_date, buy_price=round(avg_price, 2),
+                                shares=new_shares, total_cost=old.total_cost + cost,
+                                current_price=current_price, market_value=new_shares * current_price,
+                                peak_price=max(old.peak_price, current_price),
+                                add_count=old.add_count, hold_since=old.hold_since,
+                            )
+                        self._update_value()
+                        self._save()
+                        logger.info("做T买入: %s %.2f元 %s", name, current_price, buy_reason)
+                        if hasattr(self, '_messages') and self._messages is not None:
+                            self._messages.append(f"  🔄 做T买入 {name}({code}) {current_price:.2f}元×100股")
 
         # ── 追涨检测（涨太多不买，跌了才是机会） ──
         chase_penalty = 1.0
@@ -932,6 +1001,7 @@ class PaperTrading:
                 current_price=price, market_value=new_shares * price,
                 peak_price=max(old.peak_price, price),
                 add_count=add_count or old.add_count,
+                hold_since=old.hold_since or old.buy_date,
             )
         else:
             self.portfolio.positions[code] = Position(
@@ -940,6 +1010,7 @@ class PaperTrading:
                 shares=shares, total_cost=total_cost,
                 current_price=price, market_value=shares * price,
                 peak_price=price,
+                hold_since=date.today().isoformat(),
             )
         action_label = "加仓" if code in self.portfolio.positions else "买入"
         logger.info("模拟%s: %s %s股 %.2f元 ratio=%.0f%% [%s]", action_label, name, shares, price, ratio * 100, code)
