@@ -1157,6 +1157,16 @@ def main():
                         merged_lines.append(m)
                 notify(config, "📊 盘中快报", "\n".join(merged_lines))
 
+            # ── 资金不足推荐买入 ──
+            if paper.buy_recommendations:
+                rec_lines = ["💡 **资金不足·推荐买入**", ""]
+                for rec in paper.buy_recommendations:
+                    rec_lines.append(f"  📌 {rec}")
+                rec_lines.append("")
+                rec_lines.append("  💰 建议: 卖出部分持仓或追加资金")
+                paper.buy_recommendations.clear()
+                notify(config, "💡 资金不足推荐", "\n".join(rec_lines))
+
             # ── 盘后总结（15:00，每天一次） ──
             if not summary_done_today and now_time >= dt_time(15, 0):
                 summary_done_today = True

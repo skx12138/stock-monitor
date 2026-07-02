@@ -87,6 +87,7 @@ class PaperTrading:
         self._sector_cache = None
         self._sector_cache_time = 0
         self._load()
+        self.buy_recommendations: list[str] = []  # 推荐买入但因资金不足未成交的股票
 
     def _get_sector_tag(self, code: str) -> str:
         try:
@@ -231,6 +232,12 @@ class PaperTrading:
         trade = None
         pos = self.portfolio.positions.get(code)
         now = datetime.now()
+        # 清空之前推荐的记录（每轮开始时清空一次）
+        if hasattr(self, '_rec_cleared'):
+            pass
+        else:
+            self.buy_recommendations = []
+            self._rec_cleared = True
 
         # ── 量价形态调节（放量上涨加仓，放量下跌减仓） ──
         vol_adj = 1.0
@@ -902,6 +909,7 @@ class PaperTrading:
             shares = int(self.portfolio.cash * 0.9 / price / 100) * 100
             if shares < 100:
                 logger.info("现金不足(%.0f元)，%s 至少需要%.0f元才能买100股", self.portfolio.cash, name, price*100)
+                self.buy_recommendations.append(f"{name}({code}) 需{price*100:.0f}元 现金{self.portfolio.cash:.0f}元")
                 return None
         total_cost = shares * price + self._calc_commission(shares * price, code)
         if total_cost > self.portfolio.cash:
