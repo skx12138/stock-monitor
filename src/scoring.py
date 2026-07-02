@@ -174,6 +174,10 @@ def get_intraday_trend() -> tuple[str, float]:
         elif now_chg < -2 and chg_from_open < -1:
             trend = "单边下跌💀"
             intensity = min(abs(now_chg) / 4, 1.0)
+        # 剧烈震荡：日内振幅大(>2.5%)但最终涨跌幅小(<0.5%)，说明多空激烈博弈
+        elif day_range > 2.5 and abs(now_chg) < 0.5:
+            trend = "剧烈震荡⚡"
+            intensity = min(day_range / 5, 1.0)
         else:
             trend = "震荡📊"
             intensity = min(day_range / 3, 0.5)

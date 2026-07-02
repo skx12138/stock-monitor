@@ -356,7 +356,14 @@ class PaperTrading:
 
         # ── 做T策略：先卖后买，赚取日内差价 ──
         T_SHARES = 200  # 每次做T股数
-        if not trade and pos and pos.shares >= 200:
+        from src.scoring import get_intraday_trend
+        try:
+            td, _ = get_intraday_trend()
+            is_choppy = td.startswith("剧烈震荡")
+        except:
+            is_choppy = False
+        
+        if not trade and pos and pos.shares >= 200 and not is_choppy:
             today_str = date.today().isoformat()
             intraday_chg = score_info.get("change_pct", 0)
             # 检查是否有昨日持仓可做T
@@ -505,6 +512,9 @@ class PaperTrading:
             elif trend_desc.startswith("单边上涨"):
                 intraday_adj = 0.8  # 单边上涨不追高
                 logger.info("大盘%s(强度%.1f)，%s 仓位打8折防追高", trend_desc, intensity, name)
+            elif trend_desc.startswith("剧烈震荡"):
+                intraday_adj = 0.3  # 剧烈震荡，大幅降仓
+                logger.info("大盘%s(强度%.1f)，%s 仓位打3折防反复打脸", trend_desc, intensity, name)
         except Exception as e:
             logger.debug("日内趋势判断失败: %s", e)
 
