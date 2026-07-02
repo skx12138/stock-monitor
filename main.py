@@ -238,7 +238,7 @@ def _generate_summary(config: dict, signals: list, paper: "PaperTrading") -> str
                 tag = get_sector_tag(pc)
                 tag_str = f" [{tag}]" if tag else ""
                 lines.append(f"     {p_i} {pp.stock_name}({pc}){tag_str} {pp.current_price:.2f}元 {pp.profit_pct:+.2f}%")
-        pnl = (paper.portfolio.total_value - 100000) / 100000 * 100
+        pnl = (paper.portfolio.total_value - 500000) / 500000 * 100
         lines.append(f"  💰 账户: {paper.portfolio.total_value:,.2f}元 ({pnl:+.2f}%)")
     except Exception as e:
         logger.debug("交易总结合并失败: %s", e)
@@ -299,7 +299,7 @@ def main():
     today_signals = []           # 今日信号记录
     cycle_count = 0
     last_snapshot: dict = {}     # 上一轮各股状态 {code: (price, score)}
-    paper = PaperTrading(initial_cash=100000)
+    paper = PaperTrading()
 
     # 盘中价格追踪（用于检测跳水/深V）
     price_history: dict[str, list] = {}  # code -> [(time, price)]
@@ -522,7 +522,7 @@ def main():
                         trade_notify.extend(trade_lines)
                         # 账户概况
                         total_pos = len(paper.portfolio.positions)
-                        pnl = (paper.portfolio.total_value - 100000) / 100000 * 100
+                        pnl = (paper.portfolio.total_value - 500000) / 500000 * 100
                         trade_notify.append("")
                         trade_notify.append(f"  📊 持仓{total_pos}只 总资产{paper.portfolio.total_value:,.0f}元 ({pnl:+.2f}%)")
                         notify(config, "\U0001f504 开盘自动交易", "\n".join(trade_notify))
@@ -1253,7 +1253,7 @@ def main():
                             week_lines.append("")
                             week_lines.append(f"  📈 历史累计: 胜率{all_win_rate:.1f}% 盈亏{all_profit:+.2f}元")
                         week_lines.append("")
-                        ret = (paper.portfolio.total_value - 100000) / 100000 * 100
+                        ret = (paper.portfolio.total_value - 500000) / 500000 * 100
                         week_lines.append(f"  💰 账户收益: {ret:+.2f}%")
                         notify(config, "📊 每周交易总结", "\n".join(week_lines))
                     except Exception as e:

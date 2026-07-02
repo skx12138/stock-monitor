@@ -67,7 +67,7 @@ class Portfolio:
 class PaperTrading:
     """模拟交易引擎"""
 
-    def __init__(self, initial_cash: float = 100000):
+    def __init__(self, initial_cash: float = 500000):
         self.portfolio = Portfolio(cash=initial_cash, total_value=initial_cash)
         self.trade_dedup: dict[str, datetime] = {}
         self.trade_cooldown = 0
