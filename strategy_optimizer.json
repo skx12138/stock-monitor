@@ -1,10 +1,10 @@
 {
   "current_params": {
-    "buy_threshold": 60,
-    "sell_threshold": 45,
-    "stop_loss": 8,
-    "trail_activate": 6,
-    "trail_pullback": 5
+    "buy_threshold": 50,
+    "sell_threshold": 48,
+    "stop_loss": 7,
+    "trail_activate": 5,
+    "trail_pullback": 4
   },
   "current_weights": {
     "base": {

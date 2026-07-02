@@ -82,8 +82,8 @@ class PaperTrading:
         self.transfer_fee = 0.00001    # 过户费万0.1
         self.min_commission = 5.0      # 股票最低佣金5元
         self.min_etf_commission = 0.1  # ETF最低佣金0.1元
-        self.trail_activate = 6.0    # 盈利6%后启动移动止盈（让利润多跑）
-        self.trail_pullback = 5.0    # 从高点回撤5%触发止盈
+        self.trail_activate = 5.0    # 盈利5%后启动移动止盈（收紧，提高胜率）
+        self.trail_pullback = 4.0    # 从高点回撤4%触发止盈（收紧，保住利润）
         self.enable_volatility_adjust = True
         self.enable_sector_filter = True
         self._sector_cache = None
@@ -182,13 +182,13 @@ class PaperTrading:
         try:
             from src.optimizer import get_stock_params
             sp = get_stock_params(code)
-            buy_th = sp.get("buy_threshold", 60)
-            sell_th = sp.get("sell_threshold", 45)
-            stop_loss_pct = sp.get("stop_loss", 8)
+            buy_th = sp.get("buy_threshold", 50)
+            sell_th = sp.get("sell_threshold", 48)
+            stop_loss_pct = sp.get("stop_loss", 7)
         except:
-            buy_th = 60
-            sell_th = 45
-            stop_loss_pct = 8
+            buy_th = 50
+            sell_th = 48
+            stop_loss_pct = 7
 
         # ── 风控1：当日总亏损超过8%时暂停所有新开仓 ──
         daily_loss_limit = -8.0
