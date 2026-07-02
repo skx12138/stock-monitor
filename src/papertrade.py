@@ -184,11 +184,11 @@ class PaperTrading:
             sp = get_stock_params(code)
             buy_th = sp.get("buy_threshold", 50)
             sell_th = sp.get("sell_threshold", 48)
-            stop_loss_pct = sp.get("stop_loss", 7)
+            stop_loss_pct = sp.get("stop_loss", 8)
         except:
             buy_th = 50
             sell_th = 48
-            stop_loss_pct = 7
+            stop_loss_pct = 8
 
         # ── 风控1：当日总亏损超过8%时暂停所有新开仓 ──
         daily_loss_limit = -8.0
@@ -630,6 +630,15 @@ class PaperTrading:
                 # 已持仓的等待反弹，不割肉
                 # 未持仓则跳过买入
                 chase_penalty = 0
+
+        # ── 当日加仓次数限制（单票每天最多加仓2次） ──
+        if code in self.portfolio.positions:
+            today_iso = date.today().isoformat()
+            today_adds = sum(1 for t in self.portfolio.trades
+                           if t.stock_code == code and t.date == today_iso and ("加仓" in t.action or "买入" in t.action))
+            if today_adds >= 2:
+                logger.info("当日加仓已满%d次，跳过 %s", today_adds, name)
+                return None
 
         # ── 买入（动态仓位 + 大盘/预测过滤 + 情绪调节 + 日内趋势） ──
         if not trade:

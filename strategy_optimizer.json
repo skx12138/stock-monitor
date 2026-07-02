@@ -2,16 +2,16 @@
   "current_params": {
     "buy_threshold": 50,
     "sell_threshold": 48,
-    "stop_loss": 7,
+    "stop_loss": 8,
     "trail_activate": 5,
     "trail_pullback": 4
   },
   "current_weights": {
     "base": {
       "均线": 25,
-      "RSI": 20,
+      "RSI": 15,
       "MACD": 20,
-      "成交量": 15,
+      "成交量": 20,
       "资金流向": 20
     },
     "trending": {
@@ -29,14 +29,39 @@
       "资金流向": 30
     }
   },
-  "history": [],
+  "history": [
+    {
+      "date": "2026-07-02",
+      "old_params": {"stop_loss": 7},
+      "new_params": {"stop_loss": 8},
+      "reason": "收益下降(51.5%→44.0%)，放宽止损+提高成交量权重+降低RSI权重"
+    }
+  ],
   "performance_log": [
     {
       "avg_return": 51.54,
       "win_rate": 100.0
+    },
+    {
+      "avg_return": 43.97,
+      "win_rate": 100.0
     }
   ],
   "per_stock_strategies": {
+    "000620": {
+      "strategy": "稳健",
+      "params": {
+        "buy_threshold": 60,
+        "sell_threshold": 45,
+        "stop_loss": 8,
+        "trail_activate": 6,
+        "trail_pullback": 5,
+        "desc": "默认参数，适合大多数股票"
+      },
+      "return": 29.0,
+      "win_rate": 42.9,
+      "drawdown": 11.1
+    },
     "000811": {
       "strategy": "稳健",
       "params": {
@@ -47,9 +72,65 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 58.5,
+      "return": 56.9,
       "win_rate": 43.8,
-      "drawdown": 12.0
+      "drawdown": 12.1
+    },
+    "002407": {
+      "strategy": "稳健",
+      "params": {
+        "buy_threshold": 60,
+        "sell_threshold": 45,
+        "stop_loss": 8,
+        "trail_activate": 6,
+        "trail_pullback": 5,
+        "desc": "默认参数，适合大多数股票"
+      },
+      "return": 53.1,
+      "win_rate": 50.0,
+      "drawdown": 12.9
+    },
+    "002515": {
+      "strategy": "稳健",
+      "params": {
+        "buy_threshold": 60,
+        "sell_threshold": 45,
+        "stop_loss": 8,
+        "trail_activate": 6,
+        "trail_pullback": 5,
+        "desc": "默认参数，适合大多数股票"
+      },
+      "return": 20.3,
+      "win_rate": 50.0,
+      "drawdown": 8.9
+    },
+    "002549": {
+      "strategy": "稳健",
+      "params": {
+        "buy_threshold": 60,
+        "sell_threshold": 45,
+        "stop_loss": 8,
+        "trail_activate": 6,
+        "trail_pullback": 5,
+        "desc": "默认参数，适合大多数股票"
+      },
+      "return": 40.7,
+      "win_rate": 42.9,
+      "drawdown": 10.6
+    },
+    "002559": {
+      "strategy": "稳健",
+      "params": {
+        "buy_threshold": 60,
+        "sell_threshold": 45,
+        "stop_loss": 8,
+        "trail_activate": 6,
+        "trail_pullback": 5,
+        "desc": "默认参数，适合大多数股票"
+      },
+      "return": 13.8,
+      "win_rate": 33.3,
+      "drawdown": 7.0
     },
     "002931": {
       "strategy": "激进",
@@ -61,7 +142,7 @@
         "trail_pullback": 6,
         "desc": "较低门槛买入+宽止损，适合ETF和强势股"
       },
-      "return": 113.8,
+      "return": 107.8,
       "win_rate": 28.6,
       "drawdown": 19.1
     },
@@ -75,7 +156,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 33.5,
+      "return": 32.3,
       "win_rate": 62.5,
       "drawdown": 6.5
     },
@@ -89,7 +170,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 21.0,
+      "return": 19.0,
       "win_rate": 55.6,
       "drawdown": 22.3
     },
@@ -103,7 +184,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 22.0,
+      "return": 21.4,
       "win_rate": 50.0,
       "drawdown": 7.2
     },
@@ -117,7 +198,7 @@
         "trail_pullback": 6,
         "desc": "较低门槛买入+宽止损，适合ETF和强势股"
       },
-      "return": 136.6,
+      "return": 135.2,
       "win_rate": 70.6,
       "drawdown": 8.2
     },
@@ -131,7 +212,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 64.2,
+      "return": 60.1,
       "win_rate": 52.6,
       "drawdown": 7.9
     },
@@ -145,8 +226,8 @@
         "trail_pullback": 6,
         "desc": "较低门槛买入+宽止损，适合ETF和强势股"
       },
-      "return": 73.1,
-      "win_rate": 87.5,
+      "return": 61.7,
+      "win_rate": 77.8,
       "drawdown": 9.8
     },
     "600498": {
@@ -159,7 +240,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 52.7,
+      "return": 48.7,
       "win_rate": 44.4,
       "drawdown": 10.4
     },
@@ -173,7 +254,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 49.2,
+      "return": 44.4,
       "win_rate": 66.7,
       "drawdown": 9.1
     },
@@ -187,8 +268,8 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 7.4,
-      "win_rate": 35.0,
+      "return": 6.7,
+      "win_rate": 33.3,
       "drawdown": 18.7
     },
     "600584": {
@@ -201,7 +282,7 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 19.2,
+      "return": 20.6,
       "win_rate": 42.9,
       "drawdown": 8.1
     },
@@ -215,9 +296,23 @@
         "trail_pullback": 5,
         "desc": "默认参数，适合大多数股票"
       },
-      "return": 25.3,
+      "return": 29.4,
       "win_rate": 62.5,
       "drawdown": 9.6
+    },
+    "600707": {
+      "strategy": "稳健",
+      "params": {
+        "buy_threshold": 60,
+        "sell_threshold": 45,
+        "stop_loss": 8,
+        "trail_activate": 6,
+        "trail_pullback": 5,
+        "desc": "默认参数，适合大多数股票"
+      },
+      "return": 32.3,
+      "win_rate": 45.5,
+      "drawdown": 7.1
     },
     "603501": {
       "strategy": "保守",
@@ -229,7 +324,7 @@
         "trail_pullback": 3,
         "desc": "高门槛买入+紧止损，适合弱势股"
       },
-      "return": 3.0,
+      "return": 2.2,
       "win_rate": 25.0,
       "drawdown": 10.2
     },
@@ -243,9 +338,23 @@
         "trail_pullback": 6,
         "desc": "较低门槛买入+宽止损，适合ETF和强势股"
       },
-      "return": 96.9,
+      "return": 99.9,
       "win_rate": 58.8,
       "drawdown": 13.7
+    },
+    "603650": {
+      "strategy": "稳健",
+      "params": {
+        "buy_threshold": 60,
+        "sell_threshold": 45,
+        "stop_loss": 8,
+        "trail_activate": 6,
+        "trail_pullback": 5,
+        "desc": "默认参数，适合大多数股票"
+      },
+      "return": 31.5,
+      "win_rate": 58.3,
+      "drawdown": 8.9
     }
   }
 }

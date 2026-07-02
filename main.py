@@ -936,7 +936,7 @@ def main():
                     intraday_events.append(f"  🟢 {display} 涨停 +{chg:.1f}%")
 
                 # 跳水检测：5分钟内跌超2%
-                if drop_pct <= -2.0 and total_chg <= -1.5 and alert_key + "_drop" not in intraday_alerts:
+                if drop_pct <= -3.0 and total_chg <= -2.0 and alert_key + "_drop" not in intraday_alerts:
                     intraday_alerts.add(alert_key + "_drop")
                     display = realtime.get("name", name)
                     logger.info("跳水预警: %s %.1f%%", display, abs(drop_pct))
@@ -975,7 +975,13 @@ def main():
                                     should_sell = False
                                     analysis_reason = f"跳水但仍在MA20({ma20_val:.2f})上方"
                     if should_sell:
-                        sell_trade = paper._sell_position(code, price, analysis_reason)
+                        # 跳水改为卖一半，保留底仓
+                        pos2 = paper.portfolio.positions.get(code)
+                        if pos2 and pos2.shares >= 200:
+                            half_shares = max(int(pos2.shares / 2 / 100) * 100, 100)
+                            sell_trade = paper._sell_partial(code, price, half_shares, analysis_reason)
+                        else:
+                            sell_trade = paper._sell_position(code, price, analysis_reason)
                         if sell_trade:
                             profit_str = f" 盈亏{sell_trade.profit_pct:+.2f}%" if sell_trade.profit_pct else ""
                             profit_extra = f" {sell_trade.profit_pct:+.2f}%" if sell_trade.profit_pct else ""
@@ -1022,7 +1028,7 @@ def main():
                                 analysis_reason = "均线空头排列，反弹可能只是昙花一现"
                     if should_buy and vol_ok and code not in paper.portfolio.positions:
                         # ETF优先：ETF给更高仓位
-                        vv_ratio = 0.25 if code.startswith(("5", "1")) else 0.20
+                        vv_ratio = 0.15 if code.startswith(("5", "1")) else 0.10
                         buy_trade = paper._buy_position(code, display, price, vv_ratio, analysis_reason)
                         if buy_trade:
                             notify(config, "🟢 交易提醒",
