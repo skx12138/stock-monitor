@@ -846,8 +846,12 @@ def _score_intraday(change_pct: float) -> dict:
         return {"score": -15, "desc": f"今日涨{change_pct:+.1f}%过高❌追高惩罚"}
     elif change_pct > 2:
         return {"score": -8, "desc": f"今日涨{change_pct:+.1f}%偏高⚠️追高警惕"}
+    elif change_pct < -7:
+        return {"score": -5, "desc": f"今日跌{change_pct:+.1f}%趋势已坏❌不抄底"}
+    elif change_pct < -5:
+        return {"score": 0, "desc": f"今日跌{change_pct:+.1f}%观望⚠️"}
     elif change_pct < -3:
-        return {"score": 8, "desc": f"今日跌{change_pct:+.1f}%低吸机会🟢"}
+        return {"score": 4, "desc": f"今日跌{change_pct:+.1f}%关注+4"}
     elif change_pct < -1.5:
         return {"score": 4, "desc": f"今日跌{change_pct:+.1f}%可关注+4"}
     return {"score": 0, "desc": ""}

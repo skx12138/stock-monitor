@@ -935,8 +935,22 @@ def main():
                     logger.info("涨停预警: %s +%.1f%%", display, chg)
                     intraday_events.append(f"  🟢 {display} 涨停 +{chg:.1f}%")
 
-                # 跳水检测：5分钟内跌超2%
+                # 跳水检测：使用ATR动态阈值（1.5倍ATR，高波动股阈值更宽）
                 if drop_pct <= -3.0 and total_chg <= -2.0 and alert_key + "_drop" not in intraday_alerts:
+                    # 计算ATR动态阈值
+                    dynamic_threshold = -3.0
+                    kline_atr = fetch_kline(code, 60)
+                    if kline_atr is not None and len(kline_atr) > 20 and "high" in kline_atr.columns and "low" in kline_atr.columns:
+                        from src.signals import calc_atr
+                        c_atr = kline_atr["close"].values.astype(float)
+                        h_atr = kline_atr["high"].values.astype(float)
+                        l_atr = kline_atr["low"].values.astype(float)
+                        atr_v = calc_atr(c_atr, h_atr, l_atr, 14)
+                        if atr_v > 0 and price > 0:
+                            atr_pct = atr_v / price * 100
+                            dynamic_threshold = max(-5.0, -atr_pct * 1.5)  # 1.5倍ATR，最多放宽到-5%
+                    if drop_pct > dynamic_threshold:
+                        continue  # 在ATR正常范围内，不算真实跳水
                     intraday_alerts.add(alert_key + "_drop")
                     display = realtime.get("name", name)
                     logger.info("跳水预警: %s %.1f%%", display, abs(drop_pct))
@@ -1004,6 +1018,10 @@ def main():
                     intraday_events.append(f"  🆘 {display} 深V反弹 {rebound_pct:.1f}%")
                     should_buy = True
                     analysis_reason = f"深V反弹{rebound_pct:.1f}%"
+                    # ── 当日累计跌幅检查：跌超5%不接飞刀 ──
+                    if chg <= -5:
+                        should_buy = False
+                        analysis_reason = f"深V但当日累跌{chg:.1f}%，趋势已坏不接"
                     # 成交量萎缩（说明抛压衰竭）加分
                     vol_ok = True
                     if kline is not None and "volume" in kline.columns and len(kline) >= 10:
