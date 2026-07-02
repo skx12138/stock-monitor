@@ -234,7 +234,10 @@ def _generate_summary(config: dict, signals: list, paper: "PaperTrading") -> str
             lines.append(f"  📦 持仓 {pos_cnt} 只")
             for pc, pp in paper.portfolio.positions.items():
                 p_i = "🟢" if pp.profit_pct >= 0 else "🔴"
-                lines.append(f"     {p_i} {pp.stock_name}({pc}) {pp.current_price:.2f}元 {pp.profit_pct:+.2f}%")
+                from src.sectors import get_sector_tag
+                tag = get_sector_tag(pc)
+                tag_str = f" [{tag}]" if tag else ""
+                lines.append(f"     {p_i} {pp.stock_name}({pc}){tag_str} {pp.current_price:.2f}元 {pp.profit_pct:+.2f}%")
         pnl = (paper.portfolio.total_value - 100000) / 100000 * 100
         lines.append(f"  💰 账户: {paper.portfolio.total_value:,.2f}元 ({pnl:+.2f}%)")
     except Exception as e:
@@ -768,6 +771,7 @@ def main():
                     notify(config, f"{trade_icon} 交易提醒",
                         f"{trade_icon} **{trade.action} {name}({trade.stock_code})**\n"
                         f"⏰ {now.strftime('%H:%M:%S')}\n"
+                        f"板块: [{get_sector_tag(code)}]\n"
                         f"价格: {trade.price:.2f}元\n"
                         f"数量: {trade.shares}股\n"
                         f"金额: {trade.price*trade.shares:.0f}元{profit_extra}\n"
