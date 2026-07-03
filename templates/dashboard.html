@@ -4,232 +4,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A股量化监控</title>
-    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #0f172a; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        #app { max-width: 1600px; margin: 0 auto; padding: 16px; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #334155; margin-bottom: 16px; }
-        .header h1 { font-size: 22px; background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat-row { display: flex; gap: 16px; margin-bottom: 16px; }
-        .stat-card { flex: 1; background: #1e293b; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
-        .stat-card .label { color: #94a3b8; font-size: 13px; }
-        .stat-card .value { font-size: 22px; font-weight: 700; }
-        .up { color: #ef4444; } .down { color: #22c55e; }
-        .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-bottom: 16px; }
-        .stock-card { background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; cursor: pointer; transition: all .2s; }
-        .stock-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
-        .stock-card .top { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+        body { background: #f0f2f5; color: #333; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 16px; }
+        .header h1 { font-size: 22px; background: linear-gradient(90deg, #1a73e8, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .btn { padding: 8px 16px; border-radius: 8px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; font-size: 13px; transition: all .2s; }
+        .btn:hover { border-color: #1a73e8; color: #1a73e8; }
+        .btn-primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+        .btn-primary:hover { background: #1557b0; color: #fff; }
+        .btn-danger { color: #e74c3c; }
+        .btn-danger:hover { border-color: #e74c3c; }
+        .stat-row { display: flex; gap: 12px; margin-bottom: 16px; }
+        .stat-card { flex: 1; background: #fff; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+        .stat-card .label { color: #888; font-size: 13px; }
+        .stat-card .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+        .stat-card .sub { font-size: 13px; color: #888; margin-top: 4px; }
+        .up { color: #e74c3c; } .down { color: #27ae60; }
+        .section-title { font-size: 16px; font-weight: 600; margin: 20px 0 12px; color: #333; }
+        .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .stock-card { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.06); cursor: pointer; transition: all .2s; position: relative; }
+        .stock-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); transform: translateY(-2px); }
+        .stock-card .top { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
         .stock-card .name { font-size: 16px; font-weight: 600; }
-        .stock-card .code { font-size: 11px; color: #64748b; }
-        .stock-card .sector { font-size: 11px; background: #1e3a5f; color: #38bdf8; padding: 1px 8px; border-radius: 4px; margin-left: 6px; }
-        .stock-card .price { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-        .stock-card .meta { display: flex; gap: 12px; font-size: 12px; color: #94a3b8; flex-wrap: wrap; }
-        .stock-card .score { font-size: 11px; padding: 2px 8px; border-radius: 6px; }
-        .score-high { background: #14532d; color: #4ade80; }
-        .score-mid { background: #422006; color: #fbbf24; }
-        .score-low { background: #450a0a; color: #f87171; }
-        .stock-card .signals { margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; }
-        .signal-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #334155; color: #cbd5e1; }
-        .signal-tag.warn { background: #451a03; color: #fbbf24; }
-        .signal-tag.danger { background: #450a0a; color: #f87171; }
-        .section-title { font-size: 16px; font-weight: 600; margin: 20px 0 12px; color: #e2e8f0; }
-        .el-table { background: #1e293b !important; --el-table-bg-color: #1e293b; --el-table-tr-bg-color: #1e293b; --el-table-header-bg-color: #0f172a; --el-table-text-color: #e2e8f0; --el-table-header-text-color: #94a3b8; --el-table-border-color: #334155; --el-table-row-hover-bg-color: #334155; }
-        .el-table td, .el-table th { border-color: #334155 !important; }
-        .el-input__wrapper { background: #1e293b !important; border-color: #334155 !important; box-shadow: none !important; }
-        .el-input__inner { color: #e2e8f0 !important; }
-        .el-button--primary { --el-button-bg-color: #3b82f6; --el-button-border-color: #3b82f6; }
-        .el-dialog { background: #1e293b; border: 1px solid #334155; }
-        .el-dialog__title { color: #e2e8f0; }
+        .stock-card .code { font-size: 12px; color: #999; }
+        .stock-card .sector { font-size: 11px; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
+        .stock-card .remove-btn { position: absolute; top: 8px; right: 12px; width: 24px; height: 24px; border-radius: 50%; border: none; background: transparent; color: #ccc; cursor: pointer; font-size: 16px; line-height: 24px; text-align: center; }
+        .stock-card .remove-btn:hover { color: #e74c3c; background: #fce4e4; }
+        .stock-card .price { font-size: 30px; font-weight: 700; margin-bottom: 6px; }
+        .stock-card .meta { display: flex; gap: 10px; font-size: 13px; color: #666; flex-wrap: wrap; align-items: center; }
+        .score-badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+        .score-high { background: #d4edda; color: #155724; }
+        .score-mid { background: #fff3cd; color: #856404; }
+        .score-low { background: #f8d7da; color: #721c24; }
+        .signal-tags { margin-top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+        .signal-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: #f5f5f5; color: #666; border: 1px solid #e8e8e8; }
+        .signal-tag.warn { background: #fff3cd; color: #856404; border-color: #ffc107; }
+        .signal-tag.danger { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 16px; }
+        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        th { background: #fafafa; color: #666; font-weight: 600; }
+        tr:hover td { background: #fafafa; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.4); z-index: 100; justify-content: center; align-items: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #fff; border-radius: 16px; padding: 24px; width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,.15); }
+        .modal h3 { font-size: 18px; margin-bottom: 16px; }
+        .modal input { width: 100%; padding: 10px 14px; border: 1px solid #d9d9d9; border-radius: 8px; font-size: 14px; outline: none; }
+        .modal input:focus { border-color: #1a73e8; }
+        .modal .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+        .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 24px; background: #fff; border-radius: 8px; margin-bottom: 16px; font-size: 12px; color: #999; }
     </style>
 </head>
 <body>
-<div id="app">
+<div class="container">
     <div class="header">
         <h1>📈 A股量化监控</h1>
-        <div style="display:flex;gap:8px;align-items:center">
-            <span style="color:#94a3b8;font-size:12px">{{ lastUpdate }}</span>
-            <el-button circle size="small" @click="refreshAll" :loading="loading">🔄</el-button>
-            <el-button size="small" @click="showAddDialog">+ 添加股票</el-button>
+        <div class="header-actions">
+            <span class="status-bar" id="updateTime" style="margin:0;padding:6px 12px">--</span>
+            <button class="btn" onclick="refreshAll()">🔄 刷新</button>
+            <button class="btn btn-primary" onclick="showAddModal()">+ 添加股票</button>
         </div>
     </div>
 
-    <!-- 账户概览 -->
-    <div class="stat-row">
-        <div class="stat-card">
-            <div><div class="label">总资产</div><div class="value">{{ fmt(acct.total) }}</div></div>
-            <div style="text-align:right">
-                <div class="label">总收益</div>
-                <div :class="['value', acct.totalRet >= 0 ? 'up' : 'down']">{{ acct.totalRet >= 0 ? '+' : '' }}{{ acct.totalRet }}%</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div><div class="label">持仓市值</div><div class="value">{{ fmt(acct.posValue) }}</div></div>
-            <div style="text-align:right"><div class="label">持仓数</div><div class="value">{{ acct.posCount }}只</div></div>
-        </div>
-        <div class="stat-card">
-            <div><div class="label">可用现金</div><div class="value">{{ fmt(acct.cash) }}</div></div>
-            <div style="text-align:right"><div class="label">投资本金</div><div class="value">50万</div></div>
-        </div>
-    </div>
+    <div class="stat-row" id="stats"></div>
 
-    <!-- 股票卡片网格 -->
-    <div class="section-title">📊 监控股票 ({{ stocks.length }}只)</div>
-    <div class="stock-grid" v-loading="loading">
-        <div class="stock-card" v-for="s in stocks" :key="s.code" @click="showStockDetail(s)">
-            <div class="top">
-                <div>
-                    <span class="name">{{ s.name }}</span>
-                    <span class="code">{{ s.code }}</span>
-                    <span class="sector" v-if="s.sector">{{ s.sector }}</span>
-                </div>
-                <el-button size="small" circle @click.stop="removeStock(s.code)">✕</el-button>
-            </div>
-            <div :class="['price', s.chg >= 0 ? 'up' : 'down']">{{ s.price.toFixed(2) }}</div>
-            <div class="meta">
-                <span :class="s.chg >= 0 ? 'up' : 'down'">{{ s.chg >= 0 ? '+' : '' }}{{ s.chg.toFixed(2) }}%</span>
-                <span>{{ s.trend }}</span>
-                <span :class="['score', s.score >= 60 ? 'score-high' : s.score >= 40 ? 'score-mid' : 'score-low']">评分{{ s.score }}</span>
-                <span v-if="s.signals.length">信号{{ s.signals.length }}个</span>
-            </div>
-            <div class="signals" v-if="s.signals.length">
-                <span class="signal-tag" v-for="sig in s.signals.slice(0,3)" :key="sig.type" :class="sig.type.includes('bear') ? 'danger' : sig.type.includes('over') ? 'warn' : ''">{{ sig.label }}</span>
-            </div>
-        </div>
-    </div>
+    <div class="section-title">📊 监控股票 (<span id="stockCount">0</span>只)</div>
+    <div class="stock-grid" id="stockGrid"></div>
 
-    <!-- 今日交易 -->
-    <div class="section-title" v-if="acct.todayTrades.length">📋 今日交易 ({{ acct.todayTrades.length }}笔)</div>
-    <el-table :data="acct.todayTrades" size="small" v-if="acct.todayTrades.length" style="border-radius:12px;overflow:hidden">
-        <el-table-column prop="action" label="类型" width="80">
-            <template #default="{row}">
-                <span :style="{color: row.action.includes('买入')||row.action==='加仓' ? '#ef4444' : '#22c55e'}">{{ row.action }}</span>
-            </template>
-        </el-table-column>
-        <el-table-column prop="name" label="股票" width="140" />
-        <el-table-column prop="code" label="代码" width="90" />
-        <el-table-column prop="price" label="价格" width="80">
-            <template #default="{row}">{{ row.price.toFixed(2) }}</template>
-        </el-table-column>
-        <el-table-column prop="shares" label="数量" width="70" />
-        <el-table-column prop="reason" label="原因" min-width="200" show-overflow-tooltip />
-    </el-table>
-
-    <!-- 持仓 -->
-    <div class="section-title" v-if="acct.positions.length">📦 持仓明细</div>
-    <el-table :data="acct.positions" size="small" v-if="acct.positions.length" style="border-radius:12px;overflow:hidden">
-        <el-table-column prop="name" label="股票" width="130" />
-        <el-table-column prop="code" label="代码" width="80" />
-        <el-table-column prop="shares" label="股数" width="70" />
-        <el-table-column prop="buyPrice" label="均价" width="80">
-            <template #default="{row}">{{ row.buyPrice.toFixed(2) }}</template>
-        </el-table-column>
-        <el-table-column prop="price" label="现价" width="80">
-            <template #default="{row}">{{ row.price.toFixed(2) }}</template>
-        </el-table-column>
-        <el-table-column prop="profit" label="盈亏%" width="90">
-            <template #default="{row}">
-                <span :class="row.profit >= 0 ? 'up' : 'down'">{{ row.profit >= 0 ? '+' : '' }}{{ row.profit.toFixed(2) }}%</span>
-            </template>
-        </el-table-column>
-        <el-table-column prop="value" label="市值" width="90">
-            <template #default="{row}">{{ (row.shares*row.price).toFixed(0) }}</template>
-        </el-table-column>
-        <el-table-column prop="addCount" label="加仓" width="60" />
-    </el-table>
-
-    <!-- 添加股票对话框 -->
-    <el-dialog v-model="addDialogVisible" title="添加监控股票" width="360px">
-        <el-input v-model="addCode" placeholder="输入股票代码（如600888）" @keyup.enter="addStock" />
-        <template #footer>
-            <el-button @click="addDialogVisible=false">取消</el-button>
-            <el-button type="primary" @click="addStock">添加</el-button>
-        </template>
-    </el-dialog>
-
-    <!-- 股票详情对话框 -->
-    <el-dialog v-model="detailVisible" :title="detailStock.name + '(' + detailStock.code + ')'" width="500px">
-        <div v-if="detailStock.code">
-            <el-descriptions :column="2" size="small" border>
-                <el-descriptions-item label="价格">{{ detailStock.price?.toFixed(2) }}</el-descriptions-item>
-                <el-descriptions-item label="涨跌幅">
-                    <span :class="detailStock.chg >= 0 ? 'up' : 'down'">{{ (detailStock.chg||0) >= 0 ? '+' : '' }}{{ (detailStock.chg||0).toFixed(2) }}%</span>
-                </el-descriptions-item>
-                <el-descriptions-item label="趋势">{{ detailStock.trend }}</el-descriptions-item>
-                <el-descriptions-item label="评分">{{ detailStock.score }}</el-descriptions-item>
-                <el-descriptions-item label="板块">{{ detailStock.sector || '--' }}</el-descriptions-item>
-                <el-descriptions-item label="成交量">{{ detailStock.volume || '--' }}</el-descriptions-item>
-            </el-descriptions>
-        </div>
-    </el-dialog>
+    <div id="tradeSection"></div>
+    <div id="positionSection"></div>
 </div>
 
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://unpkg.com/element-plus"></script>
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h3>添加监控股票</h3>
+        <input type="text" id="addCodeInput" placeholder="输入股票代码（如600888）" onkeydown="if(event.key==='Enter')addStock()">
+        <div class="modal-btns">
+            <button class="btn" onclick="closeModal()">取消</button>
+            <button class="btn btn-primary" onclick="addStock()">添加</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="detailModal">
+    <div class="modal" style="width:450px" id="detailContent"></div>
+</div>
+
 <script>
-const { createApp, ref, onMounted, computed } = Vue;
+var data = { stocks: [], acct: {} };
+function fmt(v) { return (v||0) >= 10000 ? ((v/10000).toFixed(1)+'万') : (v||0).toFixed(0); }
 
-createApp({
-  setup() {
-    const stocks = ref([]);
-    const acct = ref({ total: 0, cash: 0, posValue: 0, posCount: 0, totalRet: 0, todayTrades: [], positions: [] });
-    const loading = ref(false);
-    const lastUpdate = ref('--');
-    const addDialogVisible = ref(false);
-    const addCode = ref('');
-    const detailVisible = ref(false);
-    const detailStock = ref({});
+async function fetchData() {
+  try {
+    var [st, ac] = await Promise.all([fetch('/api/stocks').then(r=>r.json()), fetch('/api/account').then(r=>r.json())]);
+    data.stocks = st||[]; data.acct = ac||{};
+    document.getElementById('updateTime').innerText = new Date().toLocaleTimeString();
+    render();
+  } catch(e) { console.error(e); }
+}
 
-    const fmt = (v) => (v || 0) >= 10000 ? ((v/10000).toFixed(1) + '万') : (v||0).toFixed(0);
+function render() {
+  var ac = data.acct;
+  document.getElementById('stats').innerHTML =
+    '<div class="stat-card"><div class="label">总资产</div><div class="value">'+fmt(ac.total_value)+'</div><div class="sub">投资本金 50万</div></div>' +
+    '<div class="stat-card"><div class="label">总收益</div><div class="value '+(ac.total_return>=0?'up':'down')+'">'+(ac.total_return>=0?'+':'')+ac.total_return+'%</div><div class="sub">'+(ac.today_profit||0) >= 0 ? '今日 +'+ (ac.today_profit||0)+'元' : '今日 '+(ac.today_profit||0)+'元' +'</div></div>' +
+    '<div class="stat-card"><div class="label">持仓市值</div><div class="value">'+fmt((ac.total_value||0)-(ac.cash||0))+'</div><div class="sub">可用现金 '+fmt(ac.cash)+'</div></div>' +
+    '<div class="stat-card"><div class="label">持仓/交易</div><div class="value">'+(ac.positions||[]).length+'只</div><div class="sub">今日 '+(ac.today_trades||[]).length+'笔交易</div></div>';
 
-    async function fetchData() {
-      loading.value = true;
-      try {
-        const [st, ac] = await Promise.all([
-          fetch('/api/stocks').then(r => r.json()),
-          fetch('/api/account').then(r => r.json()),
-        ]);
-        stocks.value = st || [];
-        acct.value = {
-          total: ac?.total_value || 0,
-          cash: ac?.cash || 0,
-          posValue: (ac?.total_value||0) - (ac?.cash||0),
-          posCount: ac?.positions?.length || 0,
-          totalRet: ac?.total_return || 0,
-          todayTrades: ac?.today_trades || [],
-          positions: ac?.positions || [],
-        };
-        lastUpdate.value = new Date().toLocaleTimeString();
-      } catch(e) { console.error(e); }
-      loading.value = false;
-    }
+  document.getElementById('stockCount').innerText = data.stocks.length;
 
-    async function addStock() {
-      const code = addCode.value.trim();
-      if (!code) return;
-      const r = await fetch('/api/add_stock', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({code, name:''}) });
-      const txt = await r.text();
-      ElementPlus.ElMessage.info(txt);
-      addCode.value = '';
-      addDialogVisible.value = false;
-      fetchData();
-    }
+  var grid = '';
+  data.stocks.forEach(function(s) {
+    var scoreCls = s.score >= 60 ? 'score-high' : s.score >= 40 ? 'score-mid' : 'score-low';
+    var sigHtml = '';
+    (s.signals||[]).forEach(function(sig) {
+      var cls = sig.type && sig.type.includes('bear') ? 'danger' : sig.type && sig.type.includes('over') ? 'warn' : '';
+      sigHtml += '<span class="signal-tag ' + cls + '">' + sig.label + '</span>';
+    });
+    grid += '<div class="stock-card" onclick="showDetail(\''+s.code+'\',\''+s.name+'\',\''+(s.sector||'--')+'\','+s.price+','+(s.chg||0)+','+(s.score||0)+',\''+(s.trend||'--')+'\',\''+(s.volume||'--')+'\')">' +
+      '<button class="remove-btn" onclick="event.stopPropagation();removeStock(\''+s.code+'\')">×</button>' +
+      '<div class="top"><div><span class="name">'+s.name+'</span><span class="code"> '+s.code+'</span>'+(s.sector?'<span class="sector">'+s.sector+'</span>':'')+'</div></div>' +
+      '<div class="price '+(s.chg>=0?'up':'down')+'">'+s.price.toFixed(2)+'</div>' +
+      '<div class="meta"><span class="'+(s.chg>=0?'up':'down')+'">'+(s.chg>=0?'+':'')+s.chg.toFixed(2)+'%</span><span>'+s.trend+'</span><span class="score-badge '+scoreCls+'">评分'+s.score+'</span>'+(s.signals&&s.signals.length?'<span>信号'+s.signals.length+'个</span>':'')+'</div>' +
+      (sigHtml ? '<div class="signal-tags">'+sigHtml+'</div>' : '') +
+      '</div>';
+  });
+  document.getElementById('stockGrid').innerHTML = grid || '<div style="color:#999;padding:20px;text-align:center">暂无监控股票</div>';
 
-    async function removeStock(code) {
-      const r = await fetch('/api/remove_stock', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({code}) });
-      const txt = await r.text();
-      ElementPlus.ElMessage.info(txt);
-      fetchData();
-    }
-
-    function showStockDetail(s) { detailStock.value = s; detailVisible.value = true; }
-    function refreshAll() { fetchData(); }
-
-    onMounted(() => { fetchData(); setInterval(fetchData, 30000); });
-
-    return { stocks, acct, loading, lastUpdate, addDialogVisible, addCode, detailVisible, detailStock, fmt, addStock, removeStock, showStockDetail, refreshAll };
+  // trades
+  var trades = ac.today_trades || [];
+  var tradeHtml = '';
+  if (trades.length) {
+    tradeHtml = '<div class="section-title">📋 今日交易 ('+trades.length+'笔)</div><table><tr><th>类型</th><th>股票</th><th>代码</th><th>价格</th><th>数量</th><th>原因</th></tr>';
+    trades.forEach(function(t) {
+      var cls = (t.action||'').includes('买入') || t.action==='加仓' ? 'up' : 'down';
+      tradeHtml += '<tr><td class="'+cls+'">'+t.action+'</td><td>'+t.name+'</td><td>'+t.code+'</td><td>'+t.price.toFixed(2)+'</td><td>'+t.shares+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.reason+'</td></tr>';
+    });
+    tradeHtml += '</table>';
   }
-}).use(ElementPlus).mount('#app');
+  document.getElementById('tradeSection').innerHTML = tradeHtml;
+
+  // positions
+  var pos = ac.positions || [];
+  var posHtml = '';
+  if (pos.length) {
+    posHtml = '<div class="section-title">📦 持仓明细</div><table><tr><th>股票</th><th>代码</th><th>股数</th><th>均价</th><th>现价</th><th>盈亏%</th><th>市值</th><th>加仓</th></tr>';
+    pos.forEach(function(p) {
+      var profit = p.price && p.buyPrice ? ((p.price/p.buyPrice-1)*100) : 0;
+      posHtml += '<tr><td>'+p.name+'</td><td>'+p.code+'</td><td>'+p.shares+'</td><td>'+p.buyPrice.toFixed(2)+'</td><td>'+p.price.toFixed(2)+'</td><td class="'+(profit>=0?'up':'down')+'">'+(profit>=0?'+':'')+profit.toFixed(2)+'%</td><td>'+fmt(p.shares*p.price)+'</td><td>'+p.addCount+'</td></tr>';
+    });
+    posHtml += '</table>';
+  }
+  document.getElementById('positionSection').innerHTML = posHtml;
+}
+
+function showAddModal() { document.getElementById('addModal').classList.add('show'); document.getElementById('addCodeInput').focus(); }
+function closeModal() { document.getElementById('addModal').classList.remove('show'); document.getElementById('detailModal').classList.remove('show'); }
+
+async function addStock() {
+  var code = document.getElementById('addCodeInput').value.trim();
+  if (!code) return;
+  var r = await fetch('/api/add_stock', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,name:''})});
+  alert(await r.text());
+  closeModal();
+  fetchData();
+}
+
+async function removeStock(code) {
+  if (!confirm('确定移除 '+code+'?')) return;
+  var r = await fetch('/api/remove_stock', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code})});
+  alert(await r.text());
+  fetchData();
+}
+
+function showDetail(code, name, sector, price, chg, score, trend, volume) {
+  document.getElementById('detailContent').innerHTML =
+    '<h3>'+name+' ('+code+')</h3>' +
+    '<table style="width:100%">' +
+    '<tr><td style="color:#999">价格</td><td style="font-weight:700">'+price.toFixed(2)+'</td></tr>' +
+    '<tr><td style="color:#999">涨跌幅</td><td class="'+(chg>=0?'up':'down')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</td></tr>' +
+    '<tr><td style="color:#999">趋势</td><td>'+trend+'</td></tr>' +
+    '<tr><td style="color:#999">评分</td><td>'+score+'</td></tr>' +
+    '<tr><td style="color:#999">板块</td><td>'+sector+'</td></tr>' +
+    '<tr><td style="color:#999">成交量</td><td>'+volume+'</td></tr>' +
+    '</table>' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">关闭</button></div>';
+  document.getElementById('detailModal').classList.add('show');
+}
+
+function refreshAll() { fetchData(); }
+
+fetchData();
+setInterval(fetchData, 30000);
 </script>
 </body>
 </html>
