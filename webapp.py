@@ -274,7 +274,7 @@ def api_account():
         "total_value": round(portfolio.total_value, 2),
         "cash": round(portfolio.cash, 2),
         "stock_value": round(portfolio.total_value - portfolio.cash, 2),
-        "total_return": round((portfolio.total_value - 500000) / 500000 * 100, 2),
+        "total_return": round((portfolio.total_value - 100000) / 100000 * 100, 2),
         "today_profit": today_total_profit,
         "today_chg": today_total_chg,
         "today_trades": today_trades,
