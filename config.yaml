@@ -11,7 +11,7 @@ notifier:
   qmsg_key: ''
   serverchan_key: ''
   type: wecom
-  wecom_webhook: ''
+  wecom_webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=43fc7d28-c0a7-42a2-bcef-adf0d3007c36
 price_alerts: null
 dip_add:
   add_count: 3       # 每只股最多加仓次数
@@ -66,8 +66,8 @@ stocks:
   '002515': 金字火腿
   '002549': 凯美特气
   '002559': 亚威股份
+  '002747': 埃斯顿
   '002931': 锋龙股份
-  '512480': 半导体ETF国联安
   '515880': 通信ETF国泰
   '588200': 科创芯片ETF
   '600105': 永鼎股份
@@ -79,6 +79,5 @@ stocks:
   '600584': 长电科技
   '600667': 太极实业
   '600707': 彩虹股份
-  '603501': 韦尔股份
   '603629': 利通电子
   '603650': 彤程新材
