@@ -903,7 +903,7 @@ class PaperTrading:
                 atr_value = score_info.get("atr", 0)
                 if atr_value > 0 and pos.buy_price > 0:
                     atr_pct = atr_value / pos.buy_price * 100
-                    atr_mult = max(stop_loss_pct / atr_pct, 1.0) if atr_pct > 0 else 2.0
+                    atr_mult = stop_loss_pct / atr_pct if atr_pct > 0 else 2.0
                     stop_price = pos.buy_price - atr_value * atr_mult
                     if current_price <= stop_price:
                         loss = (current_price / pos.buy_price - 1) * 100
