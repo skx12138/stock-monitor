@@ -655,7 +655,7 @@ class PaperTrading:
             pos_val = self.portfolio.positions[code].market_value
             max_allowed = self.portfolio.total_value * 0.20
             if pos_val >= max_allowed:
-                logger.info("单票仓位已达上限20%(%d元→%d元)，跳过买入 %s", pos_val, max_allowed, name)
+                logger.info("单票仓位已达上限20%%(%d元→%d元)，跳过买入 %s", pos_val, max_allowed, name)
                 return None
 
         # ── 买入（动态仓位 + 大盘/预测过滤 + 情绪调节 + 日内趋势） ──
