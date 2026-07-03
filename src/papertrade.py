@@ -57,8 +57,8 @@ class TradeRecord:
 @dataclass
 class Portfolio:
     """账户"""
-    cash: float = 100000.0       # 初始资金10万
-    total_value: float = 100000.0
+    cash: float = 500000.0       # 初始资金50万
+    total_value: float = 500000.0
     positions: dict = field(default_factory=dict)   # code -> Position
     trades: list = field(default_factory=list)
     daily_values: list = field(default_factory=list)  # 每日净值记录
@@ -69,7 +69,7 @@ class Portfolio:
 class PaperTrading:
     """模拟交易引擎"""
 
-    def __init__(self, initial_cash: float = 100000):
+    def __init__(self, initial_cash: float = 500000):
         self.initial_cash = initial_cash
         self.portfolio = Portfolio(cash=initial_cash, total_value=initial_cash)
         self.trade_dedup: dict[str, datetime] = {}
@@ -1335,7 +1335,7 @@ class PaperTrading:
         lines.append("")
 
         # 账户概况
-        init_cash = getattr(self, 'initial_cash', 100000)
+        init_cash = getattr(self, 'initial_cash', 500000)
         total_ret = (self.portfolio.total_value - init_cash) / init_cash * 100
         ret_icon = "📈" if total_ret > 0 else "📉"
         lines.append(f"{ret_icon} **总资产: {self.portfolio.total_value:,.2f}元**")
