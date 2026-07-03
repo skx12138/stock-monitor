@@ -1037,15 +1037,8 @@ def main():
                         else:
                             sell_trade = paper._sell_position(code, price, analysis_reason)
                         if sell_trade:
-                            profit_str = f" 盈亏{sell_trade.profit_pct:+.2f}%" if sell_trade.profit_pct else ""
-                            profit_extra = f" {sell_trade.profit_pct:+.2f}%" if sell_trade.profit_pct else ""
-                            notify(config, "🔴 交易提醒",
-                                f"🔴 **卖出 {display}({code})**\n"
-                                f"⏰ {now.strftime('%H:%M:%S')}\n"
-                                f"价格: {price:.2f}元\n"
-                                f"数量: {sell_trade.shares}股\n"
-                                f"金额: {price*sell_trade.shares:.0f}元{profit_extra}\n"
-                                f"原因: {sell_trade.reason}")
+                            profit_str = f" {sell_trade.profit_pct:+.2f}%" if sell_trade.profit_pct else ""
+                            batch_messages.append(f"  🔴 卖出 {display}({code}) {price:.2f}元x{sell_trade.shares}股{profit_str} | {sell_trade.reason}")
                     else:
                         logger.info("跳水不卖出: %s", analysis_reason)
                         intraday_events.append(f"  ℹ️ {display} {analysis_reason}，暂不操作")
@@ -1089,13 +1082,7 @@ def main():
                         vv_ratio = 0.15 if code.startswith(("5", "1")) else 0.10
                         buy_trade = paper._buy_position(code, display, price, vv_ratio, analysis_reason)
                         if buy_trade:
-                            notify(config, "🟢 交易提醒",
-                                f"🟢 **买入 {display}({code})**\n"
-                                f"⏰ {now.strftime('%H:%M:%S')}\n"
-                                f"价格: {price:.2f}元\n"
-                                f"数量: {buy_trade.shares}股\n"
-                                f"金额: {price*buy_trade.shares:.0f}元\n"
-                                f"原因: {analysis_reason}")
+                            batch_messages.append(f"  🟢 买入 {display}({code}) {price:.2f}元x{buy_trade.shares}股 | {analysis_reason}")
 
                 # 急跌抄底：分级抄底+量能判断+大盘联动
                 # 跌3%/5%/7%三档，逐级加仓
@@ -1158,13 +1145,7 @@ def main():
                                 f"急跌{panic_tier}%·RSI{rsi_val:.0f}·仓位{final_ratio:.0%}")
                             if buy_trade:
                                 logger.info("急跌抄底: %s 跌%.1f%% RSI%.0f 仓位%.0f%%", display, abs(drop_pct), rsi_val, final_ratio*100)
-                                notify(config, "🟢 交易提醒",
-                                    f"🟢 **急跌抄底 {display}({code})**\n"
-                                    f"⏰ {now.strftime('%H:%M:%S')}\n"
-                                    f"价格: {price:.2f}元\n"
-                                    f"数量: {buy_trade.shares}股\n"
-                                    f"金额: {price*buy_trade.shares:.0f}元\n"
-                                    f"原因: 急跌{abs(drop_pct):.0f}%抄底 RSI{rsi_val:.0f}")
+                                batch_messages.append(f"  ⚡ 急跌抄底 {display}({code}) {price:.2f}元x{buy_trade.shares}股 | 跌{abs(drop_pct):.0f}%·RSI{rsi_val:.0f}")
 
                 # ── 今日整体大跌抄底（全天累计跌幅深，不看几分钟窗口） ──
                 daily_drop_key = f"daily_{code}_{now.strftime('%Y%m%d')}"
