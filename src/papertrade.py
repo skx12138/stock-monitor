@@ -70,6 +70,7 @@ class PaperTrading:
     """模拟交易引擎"""
 
     def __init__(self, initial_cash: float = 500000):
+        self.initial_cash = initial_cash
         self.portfolio = Portfolio(cash=initial_cash, total_value=initial_cash)
         self.trade_dedup: dict[str, datetime] = {}
         self.trade_cooldown = 0
@@ -137,8 +138,8 @@ class PaperTrading:
         try:
             with open(TRADE_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            self.portfolio.cash = data.get("cash", 100000)
-            self.portfolio.total_value = data.get("total_value", 100000)
+            self.portfolio.cash = data.get("cash", self.initial_cash)
+            self.portfolio.total_value = data.get("total_value", self.initial_cash)
             for code, p in data.get("positions", {}).items():
                 self.portfolio.positions[code] = Position(**p)
             for t in data.get("trades", []):
@@ -200,7 +201,7 @@ class PaperTrading:
 
         # ── 风控1：当日总亏损超过8%时暂停所有新开仓 ──
         daily_loss_limit = -8.0
-        current_day_ret = (self.portfolio.total_value - 100000) / 100000 * 100
+        current_day_ret = (self.portfolio.total_value - self.initial_cash) / self.initial_cash * 100
         if current_day_ret < daily_loss_limit and code not in self.portfolio.positions:
             logger.warning("风控: 当日总亏损%.1f%%超过阈值%.0f%%，暂停新开仓 %s", current_day_ret, daily_loss_limit, name)
             return None
@@ -992,8 +993,16 @@ class PaperTrading:
                 buy_amount = self.portfolio.cash * ratio
                 new_sector_ratio = (sector_value + buy_amount) / self.portfolio.total_value
                 if new_sector_ratio > self.max_sector_ratio:
-                    logger.info("板块[%s]已达%.0f%%上限(%.0f%%)，跳过买入 %s", 
+                    logger.info("板块[%s]已达%.0f%%上限(%.0f%%)，跳过买入 %s",
                                 sector, self.max_sector_ratio * 100, new_sector_ratio * 100, name)
+                    return None
+                # ── 同板块股票数量限制（不超过2只） ──
+                sector_count = 0
+                for pcode in self.portfolio.positions:
+                    if get_sector_tag(pcode) == sector:
+                        sector_count += 1
+                if sector_count >= 2:
+                    logger.info("板块[%s]已有%d只持仓，不再买入同板块%s", sector, sector_count, name)
                     return None
 
         amount = self.portfolio.cash * ratio
@@ -1324,7 +1333,7 @@ class PaperTrading:
         lines.append("")
 
         # 账户概况
-        init_cash = 100000
+        init_cash = getattr(self, 'initial_cash', 100000)
         total_ret = (self.portfolio.total_value - init_cash) / init_cash * 100
         ret_icon = "📈" if total_ret > 0 else "📉"
         lines.append(f"{ret_icon} **总资产: {self.portfolio.total_value:,.2f}元**")

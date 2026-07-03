@@ -773,7 +773,10 @@ def main():
                     atr_val = calc_atr(closes, highs, lows, 14)
                 else:
                     atr_val = 0
-                score_info = compute_score(closes, volumes, price, fund_flow, code=code, change_pct=realtime.get("change_pct", 0))
+                score_info = compute_score(closes, volumes, price, fund_flow, code=code, 
+                    change_pct=realtime.get("change_pct", 0),
+                    highs=kline["high"].values.astype(float) if "high" in kline.columns else None,
+                    lows=kline["low"].values.astype(float) if "low" in kline.columns else None)
                 score_info["atr"] = atr_val
                 score_info["change_pct"] = realtime.get("change_pct", 0)
                 # 传入均线值用于趋势保护

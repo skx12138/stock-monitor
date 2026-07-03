@@ -299,7 +299,9 @@ def _detect_box(closes: np.ndarray, price: float) -> dict:
 def compute_score(closes: np.ndarray, volumes: np.ndarray,
                   price: float, fund_flow: Optional[dict] = None,
                   market_mode: str = "", code: str = "",
-                  change_pct: float = 0) -> dict:
+                  change_pct: float = 0,
+                  highs: Optional[np.ndarray] = None,
+                  lows: Optional[np.ndarray] = None) -> dict:
     """V5综合评分系统（参考daily_stock_analysis策略框架）
 
     评分维度：
@@ -379,7 +381,9 @@ def compute_score(closes: np.ndarray, volumes: np.ndarray,
         risks.append(rsi_info["desc"])
 
     # ── 5.5. 背离评分（10分）—— 顶背离/底背离检测 ──
-    diverge_info = _score_divergence(closes, highs, lows, price)
+    _h = highs if highs is not None else closes
+    _l = lows if lows is not None else closes
+    diverge_info = _score_divergence(closes, _h, _l, price)
     score += diverge_info["score"]
     details["背离"] = diverge_info
     if diverge_info["signal"] == "bullish":
