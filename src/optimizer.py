@@ -28,11 +28,15 @@ WEIGHT_RANGES = {"min": 5, "max": 40, "step": 5}
 # 多策略配置模板（匹配V5评分）
 STRATEGY_TEMPLATES = {
     "激进": {"buy_threshold": 55, "sell_threshold": 40, "stop_loss": 10, "trail_activate": 8, "trail_pullback": 6,
-             "desc": "较低门槛买入+宽止损，适合ETF和强势股"},
+             "desc": "较低门槛买入+宽止损，适合ETF和强势股", "duration": "short"},
     "稳健": {"buy_threshold": 60, "sell_threshold": 45, "stop_loss": 8, "trail_activate": 6, "trail_pullback": 5,
-             "desc": "默认参数，适合大多数股票"},
+             "desc": "默认参数，适合大多数股票", "duration": "mid"},
     "保守": {"buy_threshold": 65, "sell_threshold": 50, "stop_loss": 6, "trail_activate": 4, "trail_pullback": 3,
-             "desc": "高门槛买入+紧止损，适合弱势股"},
+             "desc": "高门槛买入+紧止损，适合弱势股", "duration": "short"},
+    "短线": {"buy_threshold": 58, "sell_threshold": 42, "stop_loss": 5, "trail_activate": 5, "trail_pullback": 3,
+             "desc": "快进快出，小止损快止盈，持股≤5天"},
+    "长线": {"buy_threshold": 62, "sell_threshold": 48, "stop_loss": 10, "trail_activate": 10, "trail_pullback": 5,
+             "desc": "趋势持有，宽止损高目标，适合ETF和绩优股"},
 }
 
 def classify_stock(avg_return: float, win_rate: float, max_drawdown: float) -> str:

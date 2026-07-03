@@ -940,6 +940,67 @@ def _score_intraday(change_pct: float) -> dict:
         return {"score": 0, "desc": f"今日跌{change_pct:+.1f}%观望⚠️"}
     elif change_pct < -3:
         return {"score": 4, "desc": f"今日跌{change_pct:+.1f}%关注+4"}
-    elif change_pct < -1.5:
-        return {"score": 4, "desc": f"今日跌{change_pct:+.1f}%可关注+4"}
     return {"score": 0, "desc": ""}
+
+
+# ══════════════════════════════════════════════
+#  今日走势整体预判
+# ══════════════════════════════════════════════
+
+def predict_market_today() -> dict:
+    """综合预判今日大盘走势
+    返回: {outlook, bias, score, trend, sentiment, advice}
+    """
+    from src.fetcher import fetch_market_index, fetch_sector_performance
+    
+    result = {"outlook": "震荡", "bias": 0, "score": 50, "trend": "", "sentiment": "", "advice": "正常交易"}
+    
+    try:
+        idx = fetch_market_index("000001")
+        if idx:
+            chg = idx.get("change_pct", 0)
+            if chg > 1: result["bias"] += 1
+            elif chg < -1: result["bias"] -= 1
+            result["trend"] = f"上证{chg:+.2f}%"
+    except: pass
+    
+    try:
+        s_lv, s_label = get_market_sentiment()
+        result["sentiment"] = s_label
+        result["bias"] += s_lv * 0.5
+    except: pass
+    
+    try:
+        t_desc, _ = get_intraday_trend()
+        result["trend"] += f" {t_desc}"
+        if t_desc in ("低开高走", "探底回升", "单边上涨"):
+            result["bias"] += 1
+        elif t_desc in ("高开低走", "单边下跌"):
+            result["bias"] -= 1
+    except: pass
+    
+    try:
+        sectors = fetch_sector_performance()
+        if sectors:
+            up_count = sum(1 for s in sectors[:10] if s["change_pct"] > 0)
+            if up_count >= 7: result["bias"] += 0.5
+            elif up_count <= 3: result["bias"] -= 0.5
+    except: pass
+    
+    if result["bias"] > 1.5:
+        result["outlook"] = "偏多"; result["advice"] = "可积极买入"
+        result["score"] = 55
+    elif result["bias"] < -1.5:
+        result["outlook"] = "偏空"; result["advice"] = "控制仓位，优先止盈"
+        result["score"] = 35
+    elif result["bias"] < -0.5:
+        result["outlook"] = "谨慎"; result["advice"] = "减少新开仓"
+        result["score"] = 45
+    elif result["bias"] > 0.5:
+        result["outlook"] = "偏多"; result["advice"] = "可适当参与"
+        result["score"] = 52
+    else:
+        result["outlook"] = "震荡"; result["advice"] = "高抛低吸做T"
+        result["score"] = 50
+    
+    return result

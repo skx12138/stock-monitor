@@ -335,3 +335,32 @@ def fetch_market_breadth() -> dict:
             result["ratio"] = 0.3
         return result
     return _akshare_cached(_do_fetch, "market_breadth", timeout=10, ttl=600)
+
+
+def fetch_top_gainers(top_n: int = 30) -> list[dict]:
+    """获取全市场涨幅榜前N名，含板块标签"""
+    def _do_fetch():
+        import akshare as ak
+        import pandas as pd
+        try:
+            df = ak.stock_zh_a_spot_em()
+            if df is None or len(df) == 0:
+                return []
+            df = df[df["代码"].str.match(r"^(60|00|30|688)\d{4}")].copy()
+            df = df[~df["名称"].str.contains("ST|退")].copy()
+            df = df.sort_values("涨跌幅", ascending=False)
+            results = []
+            for _, row in df.head(top_n).iterrows():
+                results.append({
+                    "code": str(row["代码"]),
+                    "name": str(row["名称"]),
+                    "price": float(row["最新价"]),
+                    "change_pct": float(row["涨跌幅"]),
+                    "volume": float(row.get("成交量", 0)),
+                    "turnover": float(row.get("换手率", 0)) if "换手率" in row else 0,
+                })
+            return results
+        except Exception as e:
+            logger.debug("获取涨幅榜失败: %s", e)
+            return []
+    return _akshare_cached(_do_fetch, "top_gainers", timeout=15, ttl=1200)

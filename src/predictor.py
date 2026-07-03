@@ -33,26 +33,17 @@ def predict_tomorrow(closes: np.ndarray, highs: np.ndarray, lows: np.ndarray,
     bearish_signals = 0
     score_adj = 0
 
-    # 1. 今日涨幅
-    today_chg = (price / closes[-2] - 1) * 100 if len(closes) >= 2 else 0
+    # 1. 今日涨幅（price=实时价, closes[-1]=昨日收盘）
+    today_chg = (price / closes[-1] - 1) * 100 if len(closes) >= 2 else 0
 
-    # 2. K线形态：收盘在当日高位（阳线实体）
-    today_open = closes[-2]
-    if highs[-1] > lows[-1]:
-        body_range = abs(price - closes[-2])
-        total_range = highs[-1] - lows[-1]
-        if total_range > 0:
-            upper_shadow = highs[-1] - max(price, closes[-2])
-            lower_shadow = min(price, closes[-2]) - lows[-1]
-            if upper_shadow < total_range * 0.05 and price > closes[-2]:
-                bullish_signals += 2
-                reasons.append("强势收涨")
-            elif lower_shadow > total_range * 0.6 and upper_shadow < total_range * 0.3:
-                bullish_signals += 2
-                reasons.append("跌后反弹")
-            elif upper_shadow > total_range * 0.6 and lower_shadow < total_range * 0.3:
-                bearish_signals += 2
-                reasons.append("冲高回落")
+    # 2. K线形态：盘中实时判断（无法得知当日最终高低价）
+    today_open = closes[-1]  # 昨日收盘≈今日开盘参考
+    if price > today_open:
+        bullish_signals += 2
+        reasons.append("盘中强势")
+    elif price < today_open:
+        bearish_signals += 2
+        reasons.append("盘中弱势")
 
     # 3. 均线支撑
     ma5 = _sma(closes, 5)

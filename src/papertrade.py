@@ -89,6 +89,7 @@ class PaperTrading:
         self.enable_sector_filter = True
         self._sector_cache = None
         self._sector_cache_time = 0
+        self._blocked_sells = {}  # code -> 被拦次数（防卖飞但防套牢）
         self._load()
         self.buy_recommendations: list[str] = []  # 推荐买入但因资金不足未成交的股票
         self._messages = None  # 外部消息列表钩子，用于做T通知
@@ -881,16 +882,49 @@ class PaperTrading:
                 logger.info("阴跌检测: %s 连跌%d天 累计亏%.1f%%，止损卖出", name, consecutive_days_down, abs(pos.profit_pct))
                 trade = self._sell_position(code, current_price, f"阴跌止损·连跌{consecutive_days_down}天·亏{abs(pos.profit_pct):.0f}%")
             elif score < sell_th:
-                # 大盘大跌日(>1.5%)或市场恐慌时，评分卖出降为卖一半
-                from src.scoring import get_market_sentiment
-                s_lv, _ = get_market_sentiment()
-                market_panic = s_lv <= -1
-                if market_panic or market_declining:
-                    sell_shares = pos.shares // 2
-                    if sell_shares >= 100:
-                        trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·恐慌减半")
-                        logger.info("恐慌/跌势中评分%s，%s 减半持仓", score, name)
-                # 趋势保护：均线多头时评分低也只卖一半
+                # 被拦卖出追踪：同一股票多次触发时逐步减弱保护
+                block_count = self._blocked_sells.get(code, 0)
+                if block_count >= 3:
+                    trade = self._sell_position(code, current_price,
+                        f"评分{score}·第{block_count+1}次触发·强制卖出")
+                    self._blocked_sells[code] = 0
+                    logger.info("第%d次触发评分%d，%s 强制全部卖出", block_count+1, score, name)
+                elif block_count >= 2:
+                    logger.info("第%d次触发评分%d，%s 保护减弱（跳过缩量+新买保护）", block_count+1, score, name)
+                # 卖飞保护1：缩量回调不卖（量<0.7均值=惜售，不是出货）（触发≥2次跳过）
+                if not trade and block_count < 2:
+                    try:
+                        vol_arr = score_info.get("volumes_arr", np.array([]))
+                        if len(vol_arr) >= 5:
+                            avg_vol = np.mean(vol_arr[-6:-1]) if len(vol_arr) >= 6 else np.mean(vol_arr[-5:])
+                            last_vol = vol_arr[-1]
+                            if avg_vol > 0 and last_vol < avg_vol * 0.7:
+                                logger.info("缩量回调保护: %s 评分%d 量比%.1f, 只卖一半", name, score, last_vol/avg_vol)
+                                sell_shares = pos.shares // 2
+                                if sell_shares >= 100:
+                                    trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·缩量回调减半")
+                    except: pass
+                # 卖飞保护2：刚买1-2天，评分接近阈值时等一等
+                if not trade:
+                    days_held_p = 99
+                    try:
+                        from datetime import date as dt_date
+                        days_held_p = (dt_date.today() - dt_date.fromisoformat(pos.buy_date)).days
+                    except: pass
+                    if days_held_p <= 2 and score >= sell_th - 5:
+                        logger.info("刚买入%d天保护: %s 评分%d(阈值%d) 观察中", days_held_p, name, score, sell_th)
+                # 卖飞保护3：价格在MA20上方 + RSI不超卖 = 趋势仍在
+                if not trade:
+                    kline_ma5 = score_info.get("ma5", 0)
+                    kline_ma20 = score_info.get("ma20", 0)
+                    rsi_val = score_info.get("rsi", 50)
+                    if current_price > kline_ma20 and kline_ma20 > 0 and rsi_val > 35:
+                        logger.info("MA20支撑保护: %s 现价%.2f>MA20%.2f RSI=%d, 只卖一半", 
+                            name, current_price, kline_ma20, rsi_val if isinstance(rsi_val, int) else int(rsi_val))
+                        sell_shares = pos.shares // 2
+                        if sell_shares >= 100:
+                            trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·MA20支撑减半")
+                # 趋势保护：均线多头
                 if not trade:
                     kline_ma5 = score_info.get("ma5", 0)
                     kline_ma20 = score_info.get("ma20", 0)
@@ -898,6 +932,21 @@ class PaperTrading:
                         sell_shares = pos.shares // 2
                         if sell_shares >= 100:
                             trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·趋势向上减半")
+                # 大盘大跌日(>1.5%)或市场恐慌时，评分卖出降为卖一半
+                from src.scoring import get_market_sentiment
+                s_lv, _ = get_market_sentiment()
+                market_panic = s_lv <= -1
+                if not trade and (market_panic or market_declining):
+                    sell_shares = pos.shares // 2
+                    if sell_shares >= 100:
+                        trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·恐慌减半")
+                        logger.info("恐慌/跌势中评分%s，%s 减半持仓", score, name)
+                # 追踪被拦次数：全拦 +1，部分卖出重置
+                if trade:
+                    self._blocked_sells[code] = 0
+                else:
+                    self._blocked_sells[code] = block_count + 1
+                    logger.info("卖出保护全拦: %s 第%d次 评分%d", name, block_count + 1, score)
             else:
                 # 自适应止损（基于ATR，与stop_loss_pct对齐）
                 atr_value = score_info.get("atr", 0)

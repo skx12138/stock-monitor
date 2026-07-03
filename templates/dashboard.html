@@ -92,6 +92,7 @@
 
     <div id="summarySection"></div>
     <div id="tradeSection"></div>
+    <div id="backtestSection"></div>
     <div id="positionSection"></div>
 </div>
 
@@ -234,7 +235,7 @@ function render() {
   var pos = ac.positions || [];
   var posHtml = '';
   if (pos.length) {
-    posHtml = '<div class="section-title">📦 持仓明细 ('+pos.length+'只)</div><div class="table-wrap"><table><tr><th>股票</th><th>代码</th><th>股数</th><th>均价</th><th>现价</th><th>总盈亏</th><th>盈亏%</th><th>市值</th><th>今日盈亏</th><th>加仓</th></tr>';
+    posHtml = '<div class="section-title">📦 持仓明细 ('+pos.length+'只)</div><div class="table-wrap"><table><tr><th>股票</th><th>代码</th><th>股数</th><th>均价</th><th>现价</th><th>总盈亏</th><th>盈亏%</th><th>今日盈亏</th><th>加仓</th></tr>';
     for (var pi = 0; pi < pos.length; pi++) {
       var p = pos[pi];
       var bp = safe(p.buy_price);
@@ -251,7 +252,6 @@ function render() {
         '<td>'+cp.toFixed(2)+'</td>'+
         '<td class="'+(profitAmt>=0?'up':'down')+'">'+(profitAmt>=0?'+':'')+fmtDollar(profitAmt)+'元</td>'+
         '<td class="'+(profitPct>=0?'up':'down')+'">'+(profitPct>=0?'+':'')+profitPct.toFixed(2)+'%</td>'+
-        '<td>'+fmt(shares*cp)+'</td>'+
         '<td class="'+(todayP>=0?'up':'down')+'">'+(todayP>=0?'+':'')+fmtDollar(todayP)+'元</td>'+
         '<td>'+safe(p.add_count,0)+'</td>'+
         '</tr>';
@@ -297,9 +297,31 @@ function showDetail(code, name, sector, price, chg, score, trend, volume) {
   document.getElementById('detailModal').classList.add('show');
 }
 
-function refreshAll() { fetchData(); }
+async function loadBacktest() {
+  try {
+    var bt = await fetch('/api/backtest').then(r => r.json());
+    if (!bt || !bt.length) return;
+    bt.sort(function(a,b){ return b.total_return - a.total_return; });
+    var avg = 0, wc = 0;
+    bt.forEach(function(s){ avg += s.total_return; if(s.total_return>0) wc++; });
+    avg = (avg / bt.length).toFixed(1);
+    var wr = (wc / bt.length * 100).toFixed(0);
+    var html = '<div class="section-title">📈 策略回测 (V5+近4月) · 均收益 '+avg+'% · 胜率 '+wr+'%</div>';
+    html += '<div class="table-wrap"><table><tr><th>股票</th><th>代码</th><th>收益率</th><th>胜率</th><th>交易</th></tr>';
+    bt.forEach(function(s){
+      var ic = s.total_return >= 0 ? '📈' : '📉';
+      html += '<tr><td>'+ic+' '+s.name+'</td><td>'+s.code+'</td>'+
+        '<td class="'+(s.total_return>=0?'up':'down')+'">'+(s.total_return>=0?'+':'')+s.total_return.toFixed(1)+'%</td>'+
+        '<td>'+s.win_rate.toFixed(0)+'%</td><td>'+s.total_trades+'</td></tr>';
+    });
+    html += '</table></div>';
+    document.getElementById('backtestSection').innerHTML = html;
+  } catch(e) { console.error(e); }
+}
 
-fetchData();
+function refreshAll() { fetchData(); loadBacktest(); }
+
+fetchData(); loadBacktest();
 setInterval(fetchData, 30000);
 </script>
 </body>

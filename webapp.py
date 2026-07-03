@@ -794,5 +794,27 @@ def get_trade_history_text() -> str:
     return "\n".join(lines)
 
 
+@app.route("/api/backtest")
+def api_backtest():
+    """返回V5评分策略回测结果"""
+    from src.fetcher import fetch_kline
+    from src.backtest import backtest_scoring_strategy
+    config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
+    stocks = config.get("stocks", {})
+    results = []
+    for code, name in stocks.items():
+        kline = fetch_kline(code, 120)  # 近4月
+        if kline is not None and len(kline) > 30:
+            r = backtest_scoring_strategy(code, name, kline)
+            results.append({
+                "code": code, "name": name,
+                "total_return": r.total_return,
+                "win_rate": r.win_rate,
+                "total_trades": r.total_trades,
+                "max_drawdown": r.max_drawdown,
+            })
+    return jsonify(results)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

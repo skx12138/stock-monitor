@@ -246,89 +246,77 @@ def backtest_scoring_strategy(
     initial_cash: float = 100000,
     stop_loss_pct: float = 8,
 ) -> BacktestResult:
-    """评分系统策略回测 — 模拟多指标评分买卖"""
-    from src.signals import _sma, _calc_rsi
+    """评分系统策略回测 — V5真实评分 + T+1 + 交易成本"""
     closes = df["close"].values.astype(float)
     volumes = df["volume"].values.astype(float) if "volume" in df.columns else np.zeros_like(closes)
+    highs = df["high"].values.astype(float) if "high" in df.columns else closes
+    lows = df["low"].values.astype(float) if "low" in df.columns else closes
     dates = df["date"].values
 
-    result = BacktestResult(code, name, "评分系统(均线+RSI+MACD+量能)",
+    result = BacktestResult(code, name, "V5评分+移动止盈+T+1+费率",
                             str(dates[0]) if len(dates) > 0 else "",
                             str(dates[-1]) if len(dates) > 0 else "")
     cash, hold, buy_price, peak_price = initial_cash, 0.0, 0.0, 0.0
+    buy_day = -1  # T+1：买入日索引
     in_pos = False
     peak = initial_cash
     result.equity_curve.append(initial_cash)
 
+    BUY_FEE = 0.00025          # 买入佣金万2.5
+    SELL_FEE = 0.00025 + 0.001  # 卖出佣金+印花税千1
+
     for i in range(25, len(closes)):
         p = closes[i]; d = str(dates[i])
-        w = closes[:i+1]; vw = volumes[:i+1]
-        score = 50
-        # 均线
-        m5, m10, m20 = _sma(w,5), _sma(w,10), _sma(w,20)
-        if not np.isnan(m5[-1]) and not np.isnan(m10[-1]) and not np.isnan(m20[-1]):
-            if m5[-1] > m10[-1] > m20[-1]: score += 25
-            elif m5[-1] < m10[-1] < m20[-1]: score -= 15
-            else: score += 10
-        # RSI
-        rsi = _calc_rsi(w, 14)
-        if rsi is not None:
-            if rsi < 30: score += 20
-            elif rsi < 40: score += 15
-            elif rsi > 70: score -= 10
-            else: score += 10
-        # MACD
-        e12, e26 = _ema(w,12), _ema(w,26)
-        if not np.isnan(e12[-1]) and not np.isnan(e26[-1]):
-            if e12[-1] - e26[-1] > (e12[-2] - e26[-2] if len(e12)>1 else 0): score += 20
-            else: score -= 10
-        # 量能
-        if len(vw) >= 5:
-            avg_v = np.mean(vw[-5:-1]) if np.mean(vw[-5:-1]) > 0 else 1
-            vr = vw[-1] / avg_v
-            if vr > 1.5 and p > closes[i-1]: score += 15
-            elif vr > 1.5 and p < closes[i-1]: score -= 10
-            else: score += 5
-        score = max(0, min(100, score))
+        w = closes[:i+1]; vw = volumes[:i+1]; hw = highs[:i+1]; lw = lows[:i+1]
+        # 真实V5评分引擎
+        try:
+            from src.scoring import compute_score
+            si = compute_score(w, vw, p, fund_flow=None, code=code,
+                change_pct=(p/w[-2]-1)*100 if len(w)>=2 else 0,
+                highs=hw, lows=lw)
+            score = si.get("score", 50)
+        except:
+            score = 50
 
         # 止损
         if in_pos and stop_loss_pct > 0 and buy_price > 0:
             loss = (p - buy_price) / buy_price * 100
             if loss <= -stop_loss_pct:
-                cash = cash + hold * p; hold=0; in_pos=False; buy_price=0
+                cash += hold * p * (1 - SELL_FEE); hold=0; in_pos=False; buy_day=-1
                 result.trades.append(Trade(d,"sell(止损)",round(p,2),round(loss,2),0,f"止损{stop_loss_pct}%"))
                 result.loss_trades += 1
-                result.equity_curve.append(cash)
-                if cash > peak: peak = cash
-                continue
+                result.equity_curve.append(cash); continue
+
         # 移动止盈
         if in_pos and p > peak_price: peak_price = p
         if in_pos and buy_price > 0:
             profit = (p / buy_price - 1) * 100
             pullback = (peak_price - p) / peak_price * 100
             if profit >= 12 and pullback >= 5:
-                cash = cash + hold * p; hold=0; in_pos=False
+                cash += hold * p * (1 - SELL_FEE); hold=0; in_pos=False; buy_day=-1
                 result.trades.append(Trade(d,"sell(止盈)",round(p,2),round(profit,2),0,f"回撤{pullback:.1f}%止盈"))
                 result.win_trades += 1
-                result.equity_curve.append(cash)
-                if cash > peak: peak = cash
-                continue
-        # 买入
-        if score >= 45 and not in_pos:
-            ratio = min(0.10 + (score-45)*0.01, 0.30)
-            hold = cash * ratio / p; cash *= (1-ratio)
-            buy_price = p; peak_price = p; in_pos = True
+                result.equity_curve.append(cash); continue
+
+        # 买入（含手续费）
+        if score >= 55 and not in_pos:
+            ratio = min(0.10 + (score-55)*0.01, 0.30)
+            buy_val = cash * ratio * (1 - BUY_FEE)
+            hold = buy_val / p; cash -= buy_val
+            buy_price = p; peak_price = p; in_pos = True; buy_day = i
             result.trades.append(Trade(d,"buy",round(p,2),reason=f"评分{score}"))
-        # 卖出
-        elif score < 40 and in_pos:
-            cash = cash + hold * p; profit_pct = (p/buy_price-1)*100 if buy_price>0 else 0
-            hold=0; in_pos=False; buy_price=0
+
+        # 卖出（T+1约束 + 手续费）
+        elif score < 40 and in_pos and i > buy_day:
+            cash += hold * p * (1 - SELL_FEE)
+            profit_pct = (p/buy_price-1)*100 if buy_price>0 else 0
+            hold=0; in_pos=False; buy_day=-1
             result.trades.append(Trade(d,"sell",round(p,2),round(profit_pct,2),0,f"评分{score}"))
             if profit_pct > 0: result.win_trades += 1
             else: result.loss_trades += 1
+
         total = cash + hold * p
         result.equity_curve.append(total)
-        if total > peak: peak = total
 
     if in_pos:
         cash = cash + hold * float(closes[-1])
