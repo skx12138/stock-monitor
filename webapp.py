@@ -796,7 +796,12 @@ def get_trade_history_text() -> str:
 
 @app.route("/api/backtest")
 def api_backtest():
-    """返回V5评分策略回测结果"""
+    """返回V5评分策略回测结果（1小时缓存）"""
+    cache = app.config.get("_bt_cache")
+    cache_time = app.config.get("_bt_cache_time", 0)
+    import time as btt
+    if cache and btt.time() - cache_time < 3600:
+        return jsonify(cache)
     from src.fetcher import fetch_kline
     from src.backtest import backtest_scoring_strategy
     config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
@@ -808,13 +813,36 @@ def api_backtest():
             r = backtest_scoring_strategy(code, name, kline)
             results.append({
                 "code": code, "name": name,
-                "total_return": r.total_return,
-                "win_rate": r.win_rate,
+                "total_return": round(r.total_return, 2),
+                "win_rate": round(r.win_rate, 2),
                 "total_trades": r.total_trades,
-                "max_drawdown": r.max_drawdown,
+                "max_drawdown": round(r.max_drawdown, 2),
             })
+    # 缓存结果到 app
+    app.config["_bt_cache"] = results
+    app.config["_bt_cache_time"] = int(time.time())
     return jsonify(results)
 
 
 if __name__ == "__main__":
+    import threading as _bt
+    import time as _bt_t
+    def _warm_bt():
+        _bt_t.sleep(5)
+        try:
+            from src.fetcher import fetch_kline
+            from src.backtest import backtest_scoring_strategy
+            cfg = yaml.safe_load(open("config.yaml","r",encoding="utf-8"))
+            results = []
+            for code, name in cfg.get("stocks",{}).items():
+                k = fetch_kline(code, 120)
+                if k is not None and len(k) > 30:
+                    r = backtest_scoring_strategy(code, name, k)
+                    results.append({"code":code,"name":name,"total_return":round(r.total_return,2),"win_rate":round(r.win_rate,2),"total_trades":r.total_trades,"max_drawdown":round(r.max_drawdown,2)})
+            app.config["_bt_cache"] = results
+            app.config["_bt_cache_time"] = int(_bt_t.time())
+            print("\u2713 Backtest cached (" + str(len(results)) + " stocks)")
+        except Exception as e:
+            print("Backtest warmup failed:", e)
+    _bt.Thread(target=_warm_bt, daemon=True).start()
     app.run(host="0.0.0.0", port=5000, debug=False)

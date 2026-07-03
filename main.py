@@ -543,6 +543,8 @@ def main():
                         pre_lines.extend(danger_lines)
                     # 先推送开盘前分析
                     # notify(config, "\U0001f305 开盘前分析", "\n".join(pre_lines))  # 仅保留自动交易推送
+                except Exception as e:
+                    logger.debug("开盘前分析失败: %s", e)
             # ── 开盘自动交易（9:31-9:36，等正式开盘价） ──
             if not opening_trade_done and dt_time(9, 31) <= now_time <= dt_time(9, 36):
                 opening_trade_done = True
@@ -552,9 +554,10 @@ def main():
                     trend_desc, _ = get_intraday_trend()
                     mt = predict_market_today()
                     logger.info("今日预判: %s bias=%.1f score=%d", mt["outlook"], mt["bias"], mt["score"])
-                except:
+                except Exception as e:
                     trend_desc = "震荡"
                     mt = {"outlook": "震荡", "bias": 0, "score": 50, "advice": ""}
+                    logger.debug("开盘自动交易失败: %s", e)
                 trade_lines = []
                 for t_code, t_name in stocks.items():
                     rt = fetch_realtime(t_code)
@@ -613,10 +616,6 @@ def main():
                     trade_notify.append("")
                     trade_notify.append(f"  📊 持仓{total_pos}只 总资产{paper.portfolio.total_value:,.0f}元 ({pnl:+.2f}%)")
                     # notify(config, "🔄 开盘自动交易", "\n".join(trade_notify))  # 仅保留自动交易推送
-                except Exception as e:
-                    logger.debug("开盘自动交易失败: %s", e)
-                except Exception as e:
-                    logger.debug("开盘前分析失败: %s", e)
 
             # ── 尾盘低吸扫描（14:30-15:00，每天一次） ──
             if (
@@ -687,6 +686,7 @@ def main():
                 acc_report = paper.generate_report()
                 if acc_report:
                     # notify(config, "📋 模拟账户日报", acc_report)  # 仅保留自动交易推送
+                    pass
                 # 尾盘自动交易：推荐股票买入（需次日看涨），ETF优先
                 for c in close_candidates[:3]:
                     if c["code"] not in paper.portfolio.positions and c["score"] >= 55:
@@ -873,6 +873,7 @@ def main():
                             pred_lines.insert(1, trend_text)
                         if len(pred_lines) > 2:
                             # notify(config, "🔮 明日预测", "\n".join(pred_lines))  # 仅保留自动交易推送
+                             pass
                     except Exception as e:
                         logger.debug("明日预测推送失败: %s", e)
 
