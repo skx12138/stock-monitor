@@ -8,18 +8,17 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #f0f2f5; color: #333; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 16px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
         .header h1 { font-size: 22px; background: linear-gradient(90deg, #1a73e8, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .btn { padding: 8px 16px; border-radius: 8px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; font-size: 13px; transition: all .2s; white-space: nowrap; }
         .btn:hover { border-color: #1a73e8; color: #1a73e8; }
         .btn-primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
-        .btn-primary:hover { background: #1557b0; color: #fff; }
+        .btn-primary:hover { background: #1557b0; }
         .stat-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
         .stat-card { flex: 1; min-width: 160px; background: #fff; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
         .stat-card .label { color: #888; font-size: 13px; }
         .stat-card .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
-        .stat-card .value-sm { font-size: 20px; font-weight: 700; margin-top: 4px; }
         .stat-card .sub { font-size: 13px; color: #888; margin-top: 4px; }
         .up { color: #e74c3c; } .down { color: #27ae60; }
         .section-title { font-size: 16px; font-weight: 600; margin: 20px 0 12px; color: #333; display: flex; align-items: center; gap: 8px; }
@@ -42,13 +41,12 @@
         .signal-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: #f5f5f5; color: #666; border: 1px solid #e8e8e8; }
         .signal-tag.warn { background: #fff3cd; color: #856404; border-color: #ffc107; }
         .signal-tag.danger { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
-        .signal-tag.info { background: #e8f0fe; color: #1a73e8; border-color: #aec3e8; }
         .table-wrap { width: 100%; overflow-x: auto; margin-bottom: 16px; }
-        .table-wrap table { width: 100%; min-width: 600px; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+        .table-wrap table { width: 100%; min-width: 650px; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 13px; white-space: nowrap; }
         th { background: #fafafa; color: #666; font-weight: 600; font-size: 12px; }
         tr:hover td { background: #fafafa; }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.4); z-index: 100; justify-content: center; align-items: center; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.4); z-index: 999; justify-content: center; align-items: center; }
         .modal-overlay.show { display: flex; }
         .modal { background: #fff; border-radius: 16px; padding: 24px; width: 420px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,.15); }
         .modal h3 { font-size: 18px; margin-bottom: 16px; }
@@ -60,18 +58,19 @@
         .badge-buy { background: #fce4e4; color: #c62828; }
         .badge-sell { background: #e8f5e9; color: #2e7d32; }
         .badge-add { background: #fff3e0; color: #e65100; }
-        .summary-box { background: #fff; border-radius: 12px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 16px; display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px; }
-        .summary-item { display: flex; gap: 8px; align-items: center; }
-        .summary-item .label { color: #888; }
-        .summary-item .val { font-weight: 600; }
+        .summary-box { background: #fff; border-radius: 12px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 16px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .summary-item { display: flex; flex-direction: column; gap: 2px; }
+        .summary-item .label { color: #888; font-size: 12px; }
+        .summary-item .val { font-size: 16px; font-weight: 600; }
+        .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .mt-2 { margin-top: 8px; }
         @media (max-width: 640px) {
             .container { padding: 12px; }
             .stat-card { min-width: 140px; padding: 14px 16px; }
             .stat-card .value { font-size: 20px; }
             .stock-grid { grid-template-columns: 1fr; }
-            .header { flex-direction: column; gap: 10px; }
-            .header-actions { width: 100%; justify-content: center; }
-            .summary-box { flex-direction: column; gap: 8px; }
+            .header { flex-direction: column; align-items: start; }
         }
     </style>
 </head>
@@ -116,7 +115,7 @@ var INIT_CASH = 500000;
 var data = { stocks: [], acct: {} };
 function fmt(v) { if (v==null) return '0'; return v >= 10000 ? (v/10000).toFixed(2)+'万' : v.toFixed(2); }
 function fmtDollar(v) { if (v==null) return '0'; var a=Math.abs(v); var s = a >= 10000 ? (a/10000).toFixed(2)+'万' : a.toFixed(2); return v >= 0 ? s : '-'+s; }
-function safe(v, def) { return v != null ? v : (def || 0); }
+function safe(v, d) { return v != null ? v : (d||0); }
 function esc(s) { return String(s||'').replace(/['"]/g,'').replace(/[<>]/g,''); }
 
 async function fetchData() {
@@ -135,27 +134,30 @@ function render() {
   var ac = data.acct;
   var tv = safe(ac.total_value);
   var cash = safe(ac.cash);
-  var sv = tv - cash; // stock value
+  var sv = tv - cash;
   var pnl = safe(ac.total_return);
   var todayPnl = safe(ac.today_profit);
-  var pnlAmt = tv - INIT_CASH; // 总盈亏金额
+  var pnlAmt = tv - INIT_CASH;
   var pnlCls = pnl >= 0 ? 'up' : 'down';
 
+  // ── 顶部统计卡片 ──
   document.getElementById('stats').innerHTML =
     '<div class="stat-card"><div class="label">总资产</div><div class="value">'+fmt(tv)+'</div><div class="sub">现金 '+fmt(cash)+' + 持仓 '+fmt(sv)+'</div></div>' +
     '<div class="stat-card"><div class="label">总盈亏</div><div class="value '+pnlCls+'">'+(pnlAmt>=0?'+':'')+fmtDollar(pnlAmt)+'元</div><div class="sub '+(pnl>=0?'up':'down')+'">'+(pnl>=0?'+':'')+pnl.toFixed(2)+'% (本金50万)</div></div>' +
-    '<div class="stat-card"><div class="label">今日收益</div><div class="value '+(todayPnl>=0?'up':'down')+'">'+(todayPnl>=0?'+':'')+fmtDollar(todayPnl)+'元</div><div class="sub">'+(tv>0?((todayPnl/tv*100).toFixed(2)):'0.00')+'% 日收益率</div></div>' +
-    '<div class="stat-card"><div class="label">胜率/交易</div><div class="value">'+(ac.win_rate||0)+'%</div><div class="sub">'+(ac.trade_count||0)+'笔交易 ('+(ac.win_count||0)+'胜'+(ac.trade_count-(ac.win_count||0)||0)+'负)</div></div>';
+    '<div class="stat-card"><div class="label">今日收益</div><div class="value '+(todayPnl>=0?'up':'down')+'">'+(todayPnl>=0?'+':'')+fmtDollar(todayPnl)+'元</div><div class="sub">'+(tv>0?((todayPnl/tv*100).toFixed(2)):'0.00')+'%</div></div>' +
+    '<div class="stat-card"><div class="label">胜率/交易</div><div class="value">'+(ac.win_rate||0)+'%</div><div class="sub">'+(ac.trade_count||0)+'笔 ('+(ac.win_count||0)+'胜/'+(ac.trade_count-(ac.win_count||0)||0)+'负)</div></div>';
 
   document.getElementById('stockCount').innerText = data.stocks.length;
 
+  // ── 股票卡片 ──
   var grid = '';
   if (!data.stocks.length) {
     grid = '<div class="empty-tip">暂无监控股票</div>';
   } else {
     for (var i = 0; i < data.stocks.length; i++) {
       var s = data.stocks[i];
-      var chg = safe(s.chg);
+      var changePct = safe(s.change_pct);
+      var price = safe(s.price);
       var score = safe(s.score);
       var scoreCls = score >= 60 ? 'score-high' : score >= 40 ? 'score-mid' : 'score-low';
       var sigHtml = '';
@@ -163,18 +165,19 @@ function render() {
       for (var j = 0; j < sigs.length; j++) {
         var sig = sigs[j];
         var stype = sig.type || '';
-        var cls = stype.indexOf('bear') >= 0 ? 'danger' : stype.indexOf('over') >= 0 ? 'warn' : 'info';
-        sigHtml += '<span class="signal-tag ' + cls + '">' + esc(sig.label||sig.suggestion||stype) + '</span>';
+        var cls = stype.indexOf('bear')>=0 ? 'danger' : stype.indexOf('over')>=0 ? 'warn' : 'info';
+        sigHtml += '<span class="signal-tag '+cls+'">'+esc(sig.label||sig.suggestion||stype)+'</span>';
       }
       var sector = s.sector || '';
       var name = esc(s.name||'');
       var code = esc(s.code||'');
       var trend = esc(s.trend||'--');
-      grid += '<div class="stock-card" onclick="showDetail(\''+code+'\',\''+name+'\',\''+esc(sector)+'\','+safe(s.price)+','+chg+','+score+',\''+trend+'\',\''+esc(s.volume||'')+'\')">' +
+      grid += 
+        '<div class="stock-card" onclick="showDetail(\''+code+'\',\''+name+'\',\''+esc(sector)+'\','+price+','+changePct+','+score+',\''+trend+'\',\''+esc(s.volume||'')+'\')">' +
         '<button class="remove-btn" onclick="event.stopPropagation();removeStock(\''+code+'\')">×</button>' +
         '<div class="top"><div><span class="name">'+name+'</span><span class="code"> '+code+'</span>'+(sector?'<span class="sector">'+sector+'</span>':'')+'</div></div>' +
-        '<div class="price '+(chg>=0?'up':'down')+'">'+(safe(s.price)).toFixed(2)+'</div>' +
-        '<div class="meta"><span class="'+(chg>=0?'up':'down')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span><span>'+trend+'</span><span class="score-badge '+scoreCls+'">评分'+score+'</span>'+(sigs.length?'<span>信号'+sigs.length+'个</span>':'')+'</div>' +
+        '<div class="price '+(changePct>=0?'up':'down')+'">'+price.toFixed(2)+'</div>' +
+        '<div class="meta"><span class="'+(changePct>=0?'up':'down')+'">'+(changePct>=0?'+':'')+changePct.toFixed(2)+'%</span><span>'+trend+'</span><span class="score-badge '+scoreCls+'">评分'+score+'</span>'+(sigs.length?'<span>信号'+sigs.length+'个</span>':'')+'</div>' +
         (sigHtml ? '<div class="signal-tags">'+sigHtml+'</div>' : '') +
         '</div>';
     }
@@ -182,50 +185,49 @@ function render() {
   document.getElementById('stockGrid').innerHTML = grid;
 
   // ── 收益总览 ──
-  var summary = '<div class="section-title">📈 收益总览</div><div class="summary-box">' +
-    '<span class="summary-item"><span class="label">💰 总盈亏</span><span class="val '+(pnlAmt>=0?'up':'down')+'">'+(pnlAmt>=0?'+':'')+fmtDollar(pnlAmt)+'元 ('+(pnl>=0?'+':'')+pnl.toFixed(2)+'%)</span></span>' +
-    '<span class="summary-item"><span class="label">📊 本金</span><span class="val">'+fmt(INIT_CASH)+'元</span></span>' +
-    '<span class="summary-item"><span class="label">📈 总资产</span><span class="val">'+fmt(tv)+'元</span></span>' +
-    '<span class="summary-item"><span class="label">💵 现金可用</span><span class="val">'+fmt(cash)+'元</span></span>' +
-    '<span class="summary-item"><span class="label">📦 持仓市值</span><span class="val">'+fmt(sv)+'元</span></span>' +
-    '<span class="summary-item"><span class="label">🎯 胜率</span><span class="val">'+(ac.win_rate||0)+'% ('+(ac.win_count||0)+'胜/'+(ac.trade_count-(ac.win_count||0)||0)+'负)</span></span>' +
-    '<span class="summary-item"><span class="label">💰 今日盈亏</span><span class="val '+(todayPnl>=0?'up':'down')+'">'+(todayPnl>=0?'+':'')+fmtDollar(todayPnl)+'元</span></span>' +
-    '</div>';
+  var summary = '<div class="section-title">📈 收益总览</div><div class="summary-box"><div class="summary-grid">' +
+    '<div class="summary-item"><span class="label">总盈亏（金额）</span><span class="val '+(pnlAmt>=0?'up':'down')+'">'+(pnlAmt>=0?'+':'')+fmtDollar(pnlAmt)+'元</span></div>' +
+    '<div class="summary-item"><span class="label">总盈亏（百分比）</span><span class="val '+(pnl>=0?'up':'down')+'">'+(pnl>=0?'+':'')+pnl.toFixed(2)+'%</span></div>' +
+    '<div class="summary-item"><span class="label">本金</span><span class="val">'+fmt(INIT_CASH)+'元</span></div>' +
+    '<div class="summary-item"><span class="label">总资产</span><span class="val">'+fmt(tv)+'元</span></div>' +
+    '<div class="summary-item"><span class="label">可用现金</span><span class="val">'+fmt(cash)+'元</span></div>' +
+    '<div class="summary-item"><span class="label">持仓市值</span><span class="val">'+fmt(sv)+'元</span></div>' +
+    '<div class="summary-item"><span class="label">总交易笔数</span><span class="val">'+(ac.trade_count||0)+'笔</span></div>' +
+    '<div class="summary-item"><span class="label">胜率</span><span class="val">'+(ac.win_rate||0)+'% ('+(ac.win_count||0)+'胜'+(ac.trade_count-(ac.win_count||0)||0)+'负)</span></div>' +
+    '<div class="summary-item"><span class="label">今日收益</span><span class="val '+(todayPnl>=0?'up':'down')+'">'+(todayPnl>=0?'+':'')+fmtDollar(todayPnl)+'元</span></div>' +
+    '</div></div>';
 
-  // ── 今日交易 ──
+  document.getElementById('summarySection').innerHTML = summary;
+
+  // ── 今日交易（始终显示区域） ──
   var trades = ac.today_trades || [];
-  var tradeHtml = '';
+  var tradeHtml = '<div class="section-title">📋 今日交易 ('+trades.length+'笔)</div>';
   if (trades.length) {
-    tradeHtml = '<div class="section-title">📋 今日交易 ('+trades.length+'笔)</div><div class="table-wrap"><table><tr><th>类型</th><th>股票</th><th>代码</th><th>价格</th><th>数量</th><th>金额</th><th>盈亏(金额)</th><th>盈亏%</th><th>原因</th></tr>';
+    tradeHtml += '<div class="table-wrap"><table><tr><th>类型</th><th>股票</th><th>代码</th><th>价格</th><th>数量</th><th>金额</th><th>盈亏(金额)</th><th>盈亏%</th><th>原因</th></tr>';
     for (var ti = 0; ti < trades.length; ti++) {
       var t = trades[ti];
       var act = t.action||'';
       var isBuy = act.indexOf('买入')>=0 || act==='加仓';
-      var cls = isBuy ? 'up' : 'down';
       var badgeCls = act==='加仓' ? 'badge-add' : isBuy ? 'badge-buy' : 'badge-sell';
-      var priceStr = t.price ? t.price.toFixed(2) : '--';
-      var amount = (t.price||0) * (t.shares||0);
-      var amountStr = fmtDollar(amount)+'元';
-      var profitPctStr = '--';
-      var profitAmtStr = '--';
-      if (t.profit_pct != null) { profitPctStr = (t.profit_pct >= 0 ? '+' : '') + t.profit_pct.toFixed(2) + '%'; }
-      if (t.profit_amount != null) { profitAmtStr = (t.profit_amount >= 0 ? '+' : '') + fmtDollar(t.profit_amount) + '元'; }
-      tradeHtml += '<tr>' +
-        '<td><span class="badge '+badgeCls+'">'+esc(act)+'</span></td>' +
-        '<td>'+esc(t.name||'')+'</td>' +
-        '<td>'+esc(t.code||'')+'</td>' +
-        '<td>'+priceStr+'</td>' +
-        '<td>'+(t.shares||0)+'</td>' +
-        '<td>'+amountStr+'</td>' +
-        '<td class="'+(t.profit_amount>=0?'up':'down')+'">'+profitAmtStr+'</td>' +
-        '<td class="'+(t.profit_pct>=0?'up':'down')+'">'+profitPctStr+'</td>' +
-        '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.reason||'')+'</td>' +
+      var amt = (t.price||0)*(t.shares||0);
+      var profitAmtStr = t.profit_amount != null ? ((t.profit_amount>=0?'+':'')+fmtDollar(t.profit_amount)+'元') : '--';
+      var profitPctStr = t.profit_pct != null ? ((t.profit_pct>=0?'+':'')+t.profit_pct.toFixed(2)+'%') : '--';
+      tradeHtml += '<tr>'+
+        '<td><span class="badge '+badgeCls+'">'+esc(act)+'</span></td>'+
+        '<td>'+esc(t.name||'')+'</td>'+
+        '<td>'+esc(t.code||'')+'</td>'+
+        '<td>'+(t.price?t.price.toFixed(2):'--')+'</td>'+
+        '<td>'+(t.shares||0)+'</td>'+
+        '<td>'+fmtDollar(amt)+'元</td>'+
+        '<td class="'+(t.profit_amount>=0?'up':'down')+'">'+profitAmtStr+'</td>'+
+        '<td class="'+(t.profit_pct>=0?'up':'down')+'">'+profitPctStr+'</td>'+
+        '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.reason||'')+'</td>'+
         '</tr>';
     }
     tradeHtml += '</table></div>';
+  } else {
+    tradeHtml += '<div class="empty-tip">今日暂无交易</div>';
   }
-
-  document.getElementById('summarySection').innerHTML = summary;
   document.getElementById('tradeSection').innerHTML = tradeHtml;
 
   // ── 持仓明细 ──
@@ -238,22 +240,20 @@ function render() {
       var bp = safe(p.buy_price);
       var cp = safe(p.current_price);
       var shares = safe(p.shares,0);
-      var cost = shares * bp;
-      var curVal = shares * cp;
       var profitPct = cp && bp ? ((cp/bp-1)*100) : 0;
-      var profitAmt = p.profit_amount || (curVal - cost);
-      var todayProfit = p.today_profit || 0;
-      posHtml += '<tr>' +
-        '<td>'+esc(p.name||'')+'</td>' +
-        '<td>'+esc(p.code||'')+'</td>' +
-        '<td>'+shares+'</td>' +
-        '<td>'+bp.toFixed(2)+'</td>' +
-        '<td>'+cp.toFixed(2)+'</td>' +
-        '<td class="'+(profitAmt>=0?'up':'down')+'">'+(profitAmt>=0?'+':'')+fmtDollar(profitAmt)+'元</td>' +
-        '<td class="'+(profitPct>=0?'up':'down')+'">'+(profitPct>=0?'+':'')+profitPct.toFixed(2)+'%</td>' +
-        '<td>'+fmt(curVal)+'</td>' +
-        '<td class="'+(todayProfit>=0?'up':'down')+'">'+(todayProfit>=0?'+':'')+fmtDollar(todayProfit)+'元</td>' +
-        '<td>'+safe(p.add_count,0)+'</td>' +
+      var profitAmt = p.profit_amount || (shares*cp - shares*bp);
+      var todayP = p.today_profit || 0;
+      posHtml += '<tr>'+
+        '<td>'+esc(p.name||'')+'</td>'+
+        '<td>'+esc(p.code||'')+'</td>'+
+        '<td>'+shares+'</td>'+
+        '<td>'+bp.toFixed(2)+'</td>'+
+        '<td>'+cp.toFixed(2)+'</td>'+
+        '<td class="'+(profitAmt>=0?'up':'down')+'">'+(profitAmt>=0?'+':'')+fmtDollar(profitAmt)+'元</td>'+
+        '<td class="'+(profitPct>=0?'up':'down')+'">'+(profitPct>=0?'+':'')+profitPct.toFixed(2)+'%</td>'+
+        '<td>'+fmt(shares*cp)+'</td>'+
+        '<td class="'+(todayP>=0?'up':'down')+'">'+(todayP>=0?'+':'')+fmtDollar(todayP)+'元</td>'+
+        '<td>'+safe(p.add_count,0)+'</td>'+
         '</tr>';
     }
     posHtml += '</table></div>';
@@ -284,13 +284,13 @@ async function removeStock(code) {
 function showDetail(code, name, sector, price, chg, score, trend, volume) {
   var html =
     '<h3>'+name+' ('+code+')</h3>' +
-    '<table style="width:100%">' +
-    '<tr><td style="color:#999">价格</td><td style="font-weight:700">'+safe(price).toFixed(2)+'</td></tr>' +
-    '<tr><td style="color:#999">涨跌幅</td><td class="'+(chg>=0?'up':'down')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</td></tr>' +
-    '<tr><td style="color:#999">趋势</td><td>'+esc(trend)+'</td></tr>' +
-    '<tr><td style="color:#999">评分</td><td>'+score+'</td></tr>' +
-    '<tr><td style="color:#999">板块</td><td>'+esc(sector)+'</td></tr>' +
-    '<tr><td style="color:#999">成交量</td><td>'+esc(volume)+'</td></tr>' +
+    '<table style="width:100%;margin-top:12px">' +
+    '<tr><td style="color:#999;padding:8px 0">价格</td><td style="font-weight:700;padding:8px 0">'+safe(price).toFixed(2)+'</td></tr>' +
+    '<tr><td style="color:#999;padding:8px 0">涨跌幅</td><td class="'+(chg>=0?'up':'down')+'" style="padding:8px 0">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</td></tr>' +
+    '<tr><td style="color:#999;padding:8px 0">趋势</td><td style="padding:8px 0">'+esc(trend)+'</td></tr>' +
+    '<tr><td style="color:#999;padding:8px 0">评分</td><td style="padding:8px 0">'+score+'</td></tr>' +
+    '<tr><td style="color:#999;padding:8px 0">板块</td><td style="padding:8px 0">'+esc(sector)+'</td></tr>' +
+    '<tr><td style="color:#999;padding:8px 0">成交量</td><td style="padding:8px 0">'+esc(volume)+'</td></tr>' +
     '</table>' +
     '<div class="modal-btns"><button class="btn" onclick="closeModal()">关闭</button></div>';
   document.getElementById('detailContent').innerHTML = html;
