@@ -899,10 +899,12 @@ class PaperTrading:
                         if sell_shares >= 100:
                             trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·趋势向上减半")
             else:
-                # 自适应止损（基于ATR）
+                # 自适应止损（基于ATR，与stop_loss_pct对齐）
                 atr_value = score_info.get("atr", 0)
-                if atr_value > 0:
-                    stop_price = pos.buy_price - atr_value * 2.0
+                if atr_value > 0 and pos.buy_price > 0:
+                    atr_pct = atr_value / pos.buy_price * 100
+                    atr_mult = max(stop_loss_pct / atr_pct, 1.0) if atr_pct > 0 else 2.0
+                    stop_price = pos.buy_price - atr_value * atr_mult
                     if current_price <= stop_price:
                         loss = (current_price / pos.buy_price - 1) * 100
                         trade = self._sell_position(code, current_price, f"ATR止损{loss:.1f}%(ATR={atr_value:.2f})")
