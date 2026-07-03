@@ -829,18 +829,20 @@ def main():
                     trade_icon = "🟢" if "买入" in trade.action or trade.action == "加仓" else ("🔴" if "卖出" in trade.action else "🔄")
                     is_t = " 做T" if trade.reason and "做T" in trade.reason else ""
                     profit_extra = f" {trade.profit_pct:+.2f}%" if trade.profit_pct else ""
-                    notify(config, f"{trade_icon} 交易提醒",
-                        f"{trade_icon} **{trade.action}{is_t} {name}({trade.stock_code})**\n"
-                        f"⏰ {now.strftime('%H:%M:%S')}\n"
-                        f"板块: [{get_sector_tag(code)}]\n"
-                        f"价格: {trade.price:.2f}元\n"
-                        f"数量: {trade.shares}股\n"
-                        f"金额: {trade.price*trade.shares:.0f}元{profit_extra}\n"
-                        f"原因: {trade.reason}"
-                        f"{range_str}"
-                        f"{pos_str}")
+                    batch_messages.append(f"  {trade_icon} {trade.action}{is_t} {name}({code}) {trade.price:.2f}元×{trade.shares}股{profit_extra} | {trade.reason}")
+                    logger.info("交易: %s %s %s %s", trade.action, name, trade.price, trade.shars)
 
             paper.update_prices(current_prices)
+
+            # ── 合并推送交易报告（取代逐条推送） ──
+            if batch_messages:
+                pos_count = len(paper.portfolio.positions)
+                cash_left = paper.portfolio.cash
+                buf = ["💰 **自动交易报告**", f"📦 持仓 {pos_count}只 | 可用 {cash_left:.0f}元", ""]
+                buf.extend(batch_messages)
+                notify(config, "💰 自动交易", "\n".join(buf))
+                batch_messages = []
+                today_signals = []
 
             # ── 检测单股异动，有变动时单独推送 ──
             if stock_snapshots and last_snapshot:
@@ -1255,16 +1257,13 @@ def main():
             if important_msgs or (flash_key not in intraday_alerts and signal_msgs):
                 if not important_msgs:
                     intraday_alerts.add(flash_key)
-                merged_lines = [f"📊 **盘中快报** · {now.strftime('%H:%M')}"]
+                merged_lines = [f"📊 **盘中快讯** · {now.strftime('%H:%M')}"]
                 if signal_msgs:
-                    for m in signal_msgs:
-                        merged_lines.append(m)
+                    merged_lines.append(f"  {len(signal_msgs)}条: {' | '.join(signal_msgs[:6])}")
                 if important_msgs:
-                    if signal_msgs:
-                        merged_lines.append("")
                     for m in important_msgs:
                         merged_lines.append(m)
-                notify(config, "📊 盘中快报", "\n".join(merged_lines))
+                notify(config, "📊 盘中快讯", "\n".join(merged_lines))
 
             # ── 资金不足推荐买入 ──
             if paper.buy_recommendations:
