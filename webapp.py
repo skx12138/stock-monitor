@@ -21,7 +21,7 @@ import threading
 import subprocess
 import time
 
-SYNC_INTERVAL = 300  # 每5分钟检查一次
+SYNC_INTERVAL = 30  # 每30秒检查一次
 
 def _sync_papertrade_data():
     """后台线程：定期从 GitHub 拉取最新交易数据"""
