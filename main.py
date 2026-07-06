@@ -1052,7 +1052,7 @@ def main():
                         f"盈亏: {profit_extra}{sell_pct_str}\n"
                         f"原因: {trade.reason}{range_str}\n"
                         f"{pos_str if pos_str else f'📦 当前持仓: {len(paper.portfolio.positions)}只'}")
-                    logger.info("交易: %s %s %s %s", trade.action, name, trade.price, trade.shars)
+                    logger.info("交易: %s %s %s %s", trade.action, name, trade.price, trade.shares)
 
             paper.update_prices(current_prices)
 
