@@ -1,6 +1,6 @@
 {
-  "cash": 443052.9475390001,
-  "total_value": 498299.94999999995,
+  "cash": 62140.91957300012,
+  "total_value": 490870.12,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -14,35 +14,8 @@
       "profit_pct": 2.1,
       "profit_amount": 147.93,
       "peak_price": 74.93,
-      "add_count": 0
-    },
-    "515880": {
-      "stock_code": "515880",
-      "stock_name": "通信ETF国泰",
-      "buy_date": "2026-06-29",
-      "buy_price": 1.656,
-      "shares": 3000,
-      "current_price": 1.636,
-      "total_cost": 4968.54648,
-      "market_value": 4908.0,
-      "profit_pct": -1.21,
-      "profit_amount": -60.55,
-      "peak_price": 1.781,
-      "add_count": 0
-    },
-    "000811": {
-      "stock_code": "000811",
-      "stock_name": "冰轮环境",
-      "buy_date": "2026-07-02",
-      "buy_price": 53.19,
-      "shares": 200,
-      "current_price": 54.63,
-      "total_cost": 10643.10638,
-      "market_value": 10926.0,
-      "profit_pct": 2.71,
-      "profit_amount": 282.89,
-      "peak_price": 54.7,
-      "add_count": 0
+      "add_count": 0,
+      "hold_since": ""
     },
     "512480": {
       "stock_code": "512480",
@@ -56,49 +29,23 @@
       "profit_pct": 2.5,
       "profit_amount": 329.74,
       "peak_price": 2.861,
-      "add_count": 0
+      "add_count": 0,
+      "hold_since": ""
     },
-    "600522": {
-      "stock_code": "600522",
-      "stock_name": "中天科技",
-      "buy_date": "2026-07-02",
-      "buy_price": 51.89,
-      "shares": 100,
-      "current_price": 54.03,
-      "total_cost": 5194.05189,
-      "market_value": 5403.0,
-      "profit_pct": 4.12,
-      "profit_amount": 208.95,
-      "peak_price": 54.11,
-      "add_count": 0
-    },
-    "588200": {
-      "stock_code": "588200",
-      "stock_name": "科创芯片ETF",
-      "buy_date": "2026-07-02",
-      "buy_price": 4.643,
-      "shares": 200,
-      "current_price": 4.629,
-      "total_cost": 928.7092859999999,
-      "market_value": 925.8,
-      "profit_pct": -0.3,
-      "profit_amount": -2.91,
-      "peak_price": 4.67,
-      "add_count": 0
-    },
-    "000620": {
-      "stock_code": "000620",
-      "stock_name": "新华联",
-      "buy_date": "2026-07-02",
-      "buy_price": 3.75,
-      "shares": 3200,
-      "current_price": 3.77,
-      "total_cost": 11993.11973,
-      "market_value": 12064.0,
-      "profit_pct": 0.53,
-      "profit_amount": 70.88,
-      "peak_price": 3.78,
-      "add_count": 3
+    "002407": {
+      "stock_code": "002407",
+      "stock_name": "多氟多",
+      "buy_date": "2026-07-06",
+      "buy_price": 46.17,
+      "shares": 8900,
+      "current_price": 45.81,
+      "total_cost": 411019.83738,
+      "market_value": 407709.0,
+      "profit_pct": -0.78,
+      "profit_amount": -3310.84,
+      "peak_price": 46.67,
+      "add_count": 0,
+      "hold_since": "2026-07-06"
     }
   },
   "trades": [
@@ -772,6 +719,83 @@
       "reason": "MA趋势加仓·金叉否·评分70",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出",
+      "date": "2026-07-06",
+      "price": 3.48,
+      "shares": 3200,
+      "reason": "ATR止损-7.2%(ATR=0.24)",
+      "profit_pct": -7.28,
+      "profit_amount": -873.37
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-07-06",
+      "price": 54.99,
+      "shares": 100,
+      "reason": "评分34·MA20支撑减半",
+      "profit_pct": 3.14,
+      "profit_amount": 166.89
+    },
+    {
+      "stock_code": "002407",
+      "stock_name": "多氟多",
+      "action": "加仓",
+      "date": "2026-07-06",
+      "price": 46.17,
+      "shares": 8900,
+      "reason": "评分62分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600522",
+      "stock_name": "中天科技",
+      "action": "卖出",
+      "date": "2026-07-06",
+      "price": 48.29,
+      "shares": 100,
+      "reason": "ATR止损-6.9%(ATR=4.77)",
+      "profit_pct": -7.22,
+      "profit_amount": -374.93
+    },
+    {
+      "stock_code": "588200",
+      "stock_name": "科创芯片ETF",
+      "action": "卖出",
+      "date": "2026-07-06",
+      "price": 4.43,
+      "shares": 200,
+      "reason": "阴跌止损·连跌3天·亏5%",
+      "profit_pct": -4.64,
+      "profit_amount": -43.1
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "卖出",
+      "date": "2026-07-06",
+      "price": 0.77,
+      "shares": 3000,
+      "reason": "评分39·第4次触发·强制卖出",
+      "profit_pct": -53.68,
+      "profit_amount": -2667.1
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出",
+      "date": "2026-07-06",
+      "price": 55.04,
+      "shares": 100,
+      "reason": "评分34·第4次触发·强制卖出",
+      "profit_pct": 3.23,
+      "profit_amount": 171.89
     }
   ],
   "daily_values": [
@@ -806,6 +830,10 @@
     {
       "date": "2026-07-02",
       "value": 98299.95
+    },
+    {
+      "date": "2026-07-06",
+      "value": 490870.12
     }
   ]
 }
