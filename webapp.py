@@ -16,6 +16,49 @@ from flask import Flask, render_template, jsonify, request
 
 logger = logging.getLogger(__name__)
 
+# ── 自动从GitHub同步交易数据 ──
+import threading
+import subprocess
+import time
+
+SYNC_INTERVAL = 300  # 每5分钟检查一次
+
+def _sync_papertrade_data():
+    """后台线程：定期从 GitHub 拉取最新交易数据"""
+    while True:
+        try:
+            cwd = os.path.dirname(os.path.abspath(__file__))
+            data_file = os.path.join(cwd, "papertrade_data.json")
+            # 用 git fetch 获取远程数据，只更新 papertrade_data.json
+            subprocess.run(
+                ["git", "fetch", "origin", "master"],
+                cwd=cwd, capture_output=True, timeout=15
+            )
+            result = subprocess.run(
+                ["git", "show", "origin/master:papertrade_data.json"],
+                cwd=cwd, capture_output=True, timeout=15
+            )
+            if result.returncode == 0:
+                remote_data = json.loads(result.stdout)
+                with open(data_file, "r", encoding="utf-8") as f:
+                    local_data = json.load(f)
+                remote_trades = remote_data.get("trades", [])
+                local_trades = local_data.get("trades", [])
+                # 如果远程数据更新或交易更多，则覆盖本地
+                if len(remote_trades) > len(local_trades):
+                    with open(data_file, "w", encoding="utf-8") as f:
+                        json.dump(remote_data, f, ensure_ascii=False, indent=2)
+                    logger.info("✅ 从GitHub同步交易数据: %d条 → %d条", len(local_trades), len(remote_trades))
+                    # 清空API缓存，下次请求自动重新读取
+                    _response_cache.clear()
+        except Exception as e:
+            logger.debug("同步GitHub数据失败: %s", e)
+        time.sleep(SYNC_INTERVAL)
+
+_response_cache = {}
+_sync_thread = threading.Thread(target=_sync_papertrade_data, daemon=True)
+_sync_thread.start()
+
 from src.fetcher import (
     fetch_realtime, fetch_kline, fetch_fund_flow,
     fetch_all_indices, fetch_financial, fetch_sector_performance,
@@ -824,25 +867,34 @@ def api_backtest():
     return jsonify(results)
 
 
+@app.route("/api/reload")
+def api_reload():
+    """清空缓存，强制刷新数据"""
+    app.config["_bt_cache"] = None
+    app.config["_bt_cache_time"] = 0
+    return jsonify({"status": "ok", "message": "数据已强制刷新"})
+
 if __name__ == "__main__":
     import threading as _bt
     import time as _bt_t
-    def _warm_bt():
-        _bt_t.sleep(5)
-        try:
-            from src.fetcher import fetch_kline
-            from src.backtest import backtest_scoring_strategy
-            cfg = yaml.safe_load(open("config.yaml","r",encoding="utf-8"))
-            results = []
-            for code, name in cfg.get("stocks",{}).items():
-                k = fetch_kline(code, 120)
-                if k is not None and len(k) > 30:
-                    r = backtest_scoring_strategy(code, name, k)
-                    results.append({"code":code,"name":name,"total_return":round(r.total_return,2),"win_rate":round(r.win_rate,2),"total_trades":r.total_trades,"max_drawdown":round(r.max_drawdown,2)})
-            app.config["_bt_cache"] = results
-            app.config["_bt_cache_time"] = int(_bt_t.time())
-            print("\u2713 Backtest cached (" + str(len(results)) + " stocks)")
-        except Exception as e:
-            print("Backtest warmup failed:", e)
+
+
+def _warm_bt():
+    _bt_t.sleep(5)
+    try:
+        from src.fetcher import fetch_kline
+        from src.backtest import backtest_scoring_strategy
+        cfg = yaml.safe_load(open("config.yaml","r",encoding="utf-8"))
+        results = []
+        for code, name in cfg.get("stocks",{}).items():
+            k = fetch_kline(code, 120)
+            if k is not None and len(k) > 30:
+                r = backtest_scoring_strategy(code, name, k)
+                results.append({"code":code,"name":name,"total_return":round(r.total_return,2),"win_rate":round(r.win_rate,2),"total_trades":r.total_trades,"max_drawdown":round(r.max_drawdown,2)})
+        app.config["_bt_cache"] = results
+        app.config["_bt_cache_time"] = int(_bt_t.time())
+        print("Backtest cached (" + str(len(results)) + " stocks)")
+    except Exception as e:
+        print("Backtest warmup failed:", e)
     _bt.Thread(target=_warm_bt, daemon=True).start()
     app.run(host="0.0.0.0", port=5000, debug=False)
