@@ -81,6 +81,7 @@
         <div class="header-actions">
             <span id="updateTime" style="font-size:12px;color:#999">--</span>
             <button class="btn" onclick="refreshAll()">🔄 刷新</button>
+            <button class="btn" onclick="syncData()">📥 同步数据</button>
             <button class="btn btn-primary" onclick="showAddModal()">＋ 添加股票</button>
         </div>
     </div>
@@ -317,6 +318,14 @@ async function loadBacktest() {
     html += '</table></div>';
     document.getElementById('backtestSection').innerHTML = html;
   } catch(e) { console.error(e); }
+}
+
+async function syncData() {
+  try {
+    var r = await fetch('/api/reload').then(r => r.json());
+    if (r.status === 'ok') { refreshAll(); alert('✅ 数据已同步'); }
+    else alert('同步失败: '+r.message);
+  } catch(e) { alert('同步失败: '+ e); }
 }
 
 function refreshAll() { fetchData(); loadBacktest(); }
