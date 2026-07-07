@@ -1,6 +1,6 @@
 {
   "cash": 62140.91957300012,
-  "total_value": 490870.12,
+  "total_value": 486687.12,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -38,12 +38,12 @@
       "buy_date": "2026-07-06",
       "buy_price": 46.17,
       "shares": 8900,
-      "current_price": 45.81,
+      "current_price": 45.34,
       "total_cost": 411019.83738,
-      "market_value": 407709.0,
-      "profit_pct": -0.78,
-      "profit_amount": -3310.84,
-      "peak_price": 46.67,
+      "market_value": 403526.00000000006,
+      "profit_pct": -1.8,
+      "profit_amount": -7493.84,
+      "peak_price": 46.83,
       "add_count": 0,
       "hold_since": "2026-07-06"
     }
@@ -834,6 +834,10 @@
     {
       "date": "2026-07-06",
       "value": 490870.12
+    },
+    {
+      "date": "2026-07-07",
+      "value": 486687.12
     }
   ]
 }
