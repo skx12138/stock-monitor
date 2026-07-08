@@ -874,17 +874,30 @@ class PaperTrading:
             # T+1: 当天买入不能当天卖出
             if pos.buy_date == today_str:
                 pass
+            # ── 仓位过高时加速卖出（独立于下方elif链，先降仓到安全线） ──
+            self._update_value()
+            high_pos_ratio = (self.portfolio.total_value - self.portfolio.cash) / self.portfolio.total_value
+            if (high_pos_ratio >= 0.70 and score < sell_th + 5 and not trade
+                and consecutive_days_down < 2 and pos.buy_date != today_str):
+                heavy_drop_here = (score_info.get("change_pct", 0) < -5)
+                if not heavy_drop_here:
+                    trade = self._sell_position(code, current_price,
+                        f"减仓降仓·评分{score}·仓位{high_pos_ratio*100:.0f}%")
+                    if trade:
+                        logger.info("仓位过高(%.0f%%)强制卖出: %s 评分%d", high_pos_ratio*100, name, score)
             # ── 大跌日/恐慌错杀保护：不止损等反弹 ──
-            elif heavy_drop and drop_analysis in ("恐慌错杀", "加速赶底"):
+            if not trade and heavy_drop and drop_analysis in ("恐慌错杀", "加速赶底"):
                 logger.info("暴跌分析[%s]，%s 跳过卖出等反弹", drop_analysis, name)
             # ── 阴跌卖出：连续3日下跌+累计亏超3%，防止温水煮青蛙 ──
-            elif consecutive_days_down >= 3 and pos.profit_pct < -3:
+            elif not trade and consecutive_days_down >= 3 and pos.profit_pct < -3:
                 logger.info("阴跌检测: %s 连跌%d天 累计亏%.1f%%，止损卖出", name, consecutive_days_down, abs(pos.profit_pct))
                 trade = self._sell_position(code, current_price, f"阴跌止损·连跌{consecutive_days_down}天·亏{abs(pos.profit_pct):.0f}%")
             elif score < sell_th:
+                # 仓位过高时(>60%)跳过保护直达卖出
+                high_pos_score = high_pos_ratio >= 0.60
                 # 被拦卖出追踪：同一股票多次触发时逐步减弱保护
                 block_count = self._blocked_sells.get(code, 0)
-                if block_count >= 3:
+                if block_count >= 3 or high_pos_score:
                     trade = self._sell_position(code, current_price,
                         f"评分{score}·第{block_count+1}次触发·强制卖出")
                     self._blocked_sells[code] = 0
@@ -1026,7 +1039,7 @@ class PaperTrading:
         # ── 总仓位控制：持仓市值占比不超过 max_total_ratio ──
         self._update_value()
         current_pos_ratio = (self.portfolio.total_value - self.portfolio.cash) / self.portfolio.total_value
-        if current_pos_ratio >= self.max_total_ratio and code not in self.portfolio.positions:
+        if current_pos_ratio >= self.max_total_ratio:
             logger.info("总仓位已达%.0f%%上限，跳过买入 %s", self.max_total_ratio * 100, name)
             return None
 
