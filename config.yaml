@@ -19,7 +19,7 @@ notifier:
   qmsg_key: ''
   serverchan_key: ''
   type: wecom
-  wecom_webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=43fc7d28-c0a7-42a2-bcef-adf0d3007c36
+  wecom_webhook: ''
 price_alerts: null
 real_trader:
   credentials_file: credentials.json
