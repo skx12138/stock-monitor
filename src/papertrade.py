@@ -87,9 +87,14 @@ class PaperTrading:
         self.trail_pullback = 4.0    # 从高点回撤4%触发止盈（收紧，保住利润）
         self.enable_volatility_adjust = True
         self.enable_sector_filter = True
+        self.max_single_value = 200000.0   # 单票绝对金额上限20万
+        self.max_single_ratio = 0.15       # 单票占总值比例上限15%
+        self.sell_cooldown: dict[str, str] = {}  # code -> 冷却到期日(ISO格式)
+        self._min_hold_time_minutes = 30   # 买入后最短持有时间(分钟)，防止分钟级追涨杀跌
+        self._peak_value = self.initial_cash  # 组合峰值(用于回撤计算)
+        self._drawdown_mode = False        # 回撤风控模式
         self._sector_cache = None
         self._sector_cache_time = 0
-        self._blocked_sells = {}  # code -> 被拦次数（防卖飞但防套牢）
         self._load()
         self.buy_recommendations: list[str] = []  # 推荐买入但因资金不足未成交的股票
         self._messages = None  # 外部消息列表钩子，用于做T通知
@@ -302,14 +307,12 @@ class PaperTrading:
             elif vol_pct > 3:
                 vol_ratio = 0.75   # 中波动，仓位打75折
 
-        # ── 动态仓位（匹配V5评分体系） ──
-        #   V5评分 buy_th(60)=10%  65=15%  70=20%  75=25%  80+=30%
+        # ── 动态仓位（非线性映射：高分重仓，低分轻仓） ──
         def get_ratio(s):
-            if s >= buy_th + 20: return 0.30 * vol_ratio
-            if s >= buy_th + 15: return 0.25 * vol_ratio
-            if s >= buy_th + 10: return 0.20 * vol_ratio
-            if s >= buy_th + 5:  return 0.15 * vol_ratio
-            if s >= buy_th:      return 0.10 * vol_ratio
+            if s >= 80: return 0.25 * vol_ratio    # 强烈共振，重仓
+            if s >= 70: return 0.15 * vol_ratio    # 多指标偏好，中仓
+            if s >= 60: return 0.08 * vol_ratio    # 勉强达标，轻仓试探
+            if s >= 55: return 0.03 * vol_ratio    # 观察仓
             return 0
 
         # ── 移动止盈 ──
@@ -348,95 +351,114 @@ class PaperTrading:
                 if pullback >= trail_pull:
                     return self._sell_position(code, current_price, f"移动止盈(从高点回撤{pullback:.1f}%)")
 
-            # ── 分批止盈（让利润多跑一会儿，抬高出货门槛） ──
+            # ── 分批止盈（让利润多跑一会儿，但避免切成碎股） ──
             sell_shares = 0
             profit_str = ""
             if profit >= 30:
                 sell_shares = pos.shares  # 全清
                 profit_str = f"止盈{profit:.1f}%清仓"
             elif profit >= 20 and pos.shares >= 200:
-                sell_shares = min(100, pos.shares // 2)  # 至少卖100股
+                sell_shares = max(100, int(pos.shares * 0.5 / 100) * 100)  # 卖一半，至少100股
                 profit_str = f"止盈{profit:.1f}%卖{sell_shares}股"
             elif profit >= 12 and pos.shares >= 200:
-                sell_shares = min(100, pos.shares // 2)  # 至少卖100股
+                sell_shares = max(100, int(pos.shares * 0.5 / 100) * 100)  # 卖一半，至少100股
                 profit_str = f"止盈{profit:.1f}%卖{sell_shares}股"
 
             if sell_shares > 0:
                 trade = self._sell_partial(code, current_price, sell_shares, profit_str)
 
         # ── 做T策略：先卖后买，赚取日内差价 ──
-        T_SHARES = 200  # 每次做T股数
-        from src.scoring import get_intraday_trend
-        try:
-            td, _ = get_intraday_trend()
-            is_choppy = td.startswith("剧烈震荡")
-        except:
-            is_choppy = False
-        
-        if not trade and pos and pos.shares >= 200 and not is_choppy:
+        if not trade and pos and pos.shares >= 200:
             today_str = date.today().isoformat()
-            intraday_chg = score_info.get("change_pct", 0)
-            # 检查是否有昨日持仓可做T
-            can_t_trade = pos.shares  # 全部可T卖出，因为buy_date被更新为今日
-            if pos.hold_since and pos.hold_since < today_str:
-                can_t_trade = pos.shares
-            # 初始化T交易记录
+            # 最大1个T周期/股票/天
+            t_key = f"{code}_{today_str}"
             if not hasattr(self, '_t_records'):
                 self._t_records = {}
-            t_key = f"{code}_{today_str}"
-            t_info = self._t_records.get(t_key, {"sold": 0, "buy_price": 0})
-            # T卖点：日内涨超3%，卖出T_SHARES股
-            if intraday_chg >= 3.0 and t_info["sold"] == 0 and can_t_trade >= 400:
-                from datetime import time as _dt_time
-                now_t = datetime.now().time()
-                if _dt_time(9, 30) <= now_t <= _dt_time(14, 30):
-                    t_info["sold"] = T_SHARES
-                    t_info["buy_price"] = current_price
-                    self._t_records[t_key] = t_info
-                    trade = self._sell_partial(code, current_price, T_SHARES, f"做T卖出+{intraday_chg:.1f}%")
-                    logger.info("做T卖出: %s +%.1f%% 卖%d股 等回调接回", name, intraday_chg, T_SHARES)
-                    if hasattr(self, '_messages') and self._messages is not None:
-                        self._messages.append(f"  🔄 做T卖出 {name}({code}) {current_price:.2f}元×{T_SHARES}股")
-            # T买点：日内跌超1.5%或有T仓位未回补，买回
-            if not trade and t_info["sold"] > 0:
-                should_buy_back = False
-                buy_reason = ""
-                # 跌超1.5%接回
-                if intraday_chg <= -1.5:
-                    should_buy_back = True
-                    buy_reason = f"做T买入(跌{intraday_chg:.1f}%)"
-                # 收盘前强制接回（14:50后）
-                from datetime import time as _dt_time
-                now_t = datetime.now().time()
-                if _dt_time(14, 50) <= now_t <= _dt_time(15, 0):
-                    should_buy_back = True
-                    buy_reason = "做T买入(收盘强制接回)"
-                if should_buy_back:
-                    t_info["sold"] = 0
-                    self._t_records[t_key] = t_info
-                    # 直接买回（用卖出时的金额等量买回）
-                    buy_amount = t_info.get("buy_price", current_price) * T_SHARES
-                    if self.portfolio.cash >= buy_amount * 1.01:
-                        shares = T_SHARES
-                        cost = shares * current_price + self._calc_commission(shares * current_price, code)
-                        self.portfolio.cash -= cost
-                        old = self.portfolio.positions.get(code)
-                        if old:
-                            new_shares = old.shares + shares
-                            avg_price = (old.total_cost + cost) / new_shares
-                            self.portfolio.positions[code] = Position(
-                                stock_code=code, stock_name=name,
-                                buy_date=old.buy_date, buy_price=round(avg_price, 2),
-                                shares=new_shares, total_cost=old.total_cost + cost,
-                                current_price=current_price, market_value=new_shares * current_price,
-                                peak_price=max(old.peak_price, current_price),
-                                add_count=old.add_count, hold_since=old.hold_since,
-                            )
-                        self._update_value()
-                        self._save()
-                        logger.info("做T买入: %s %.2f元 %s", name, current_price, buy_reason)
+            t_info = self._t_records.get(t_key, {"sold": 0, "buy_price": 0, "cycle_done": False})
+
+            if t_info["cycle_done"]:
+                pass  # 今日已做T，跳过
+            else:
+                intraday_chg = score_info.get("change_pct", 0)
+                can_t_trade = pos.shares
+
+                # T卖出量：动态计算，15%仓位或20000元等值，取较小值
+                t_shares_dynamic = max(100, min(
+                    int(pos.shares * 0.15 / 100) * 100,
+                    int(20000 / current_price / 100) * 100
+                ))
+                if t_shares_dynamic < 100:
+                    t_shares_dynamic = 100
+
+                # T卖出/买入阈值：用ATR动态计算
+                atr_val_t = score_info.get("atr", 0)
+                t_sell_threshold = 3.0
+                t_buy_threshold = -1.5
+                if atr_val_t > 0 and current_price > 0:
+                    atr_pct_t = atr_val_t / current_price * 100
+                    t_sell_threshold = max(3.0, atr_pct_t * 1.5)
+                    t_buy_threshold = min(-1.5, -atr_pct_t * 0.8)
+
+                # T卖点：日内涨超阈值
+                if intraday_chg >= t_sell_threshold and t_info["sold"] == 0 and can_t_trade >= t_shares_dynamic * 2:
+                    from datetime import time as _dt_time
+                    now_t = datetime.now().time()
+                    if _dt_time(9, 30) <= now_t <= _dt_time(14, 30):
+                        t_info["sold"] = t_shares_dynamic
+                        t_info["buy_price"] = current_price
+                        self._t_records[t_key] = t_info
+                        trade = self._sell_partial(code, current_price, t_shares_dynamic,
+                            f"做T卖出+{intraday_chg:.1f}%(ATR阈值{t_sell_threshold:.1f}%)")
+                        logger.info("做T卖出: %s +%.1f%% 卖%d股(动态%d)", name, intraday_chg, t_shares_dynamic, t_shares_dynamic)
                         if hasattr(self, '_messages') and self._messages is not None:
-                            self._messages.append(f"  🔄 做T买入 {name}({code}) {current_price:.2f}元×{T_SHARES}股")
+                            self._messages.append(f"  🔄 做T卖出 {name}({code}) {current_price:.2f}元×{t_shares_dynamic}股")
+
+                # T买点
+                if not trade and t_info["sold"] > 0:
+                    should_buy_back = False
+                    buy_reason = ""
+                    # 跌超阈值时接回
+                    if intraday_chg <= t_buy_threshold:
+                        should_buy_back = True
+                        buy_reason = f"做T买入(跌{intraday_chg:.1f}%·ATR阈值{t_buy_threshold:.1f}%)"
+                    # 收盘前强制接回：仅当T交易亏损时（盈利就让T飞）
+                    if not should_buy_back:
+                        from datetime import time as _dt_time
+                        now_t = datetime.now().time()
+                        if _dt_time(14, 50) <= now_t <= _dt_time(15, 0):
+                            t_profit = current_price < t_info.get("buy_price", current_price)
+                            if t_profit:
+                                should_buy_back = True
+                                buy_reason = "做T买入(收盘强制接回·亏损中)"
+                            else:
+                                logger.info("做T盈利中(%.2f<%.2f)，放弃强制接回", current_price, t_info.get("buy_price", current_price))
+                                t_info["cycle_done"] = True
+                    if should_buy_back:
+                        t_info["cycle_done"] = True
+                        t_info["sold"] = 0
+                        self._t_records[t_key] = t_info
+                        buy_amount = t_info.get("buy_price", current_price) * t_shares_dynamic
+                        if self.portfolio.cash >= buy_amount * 1.01:
+                            shares_t = t_shares_dynamic
+                            cost_t = shares_t * current_price + self._calc_commission(shares_t * current_price, code)
+                            self.portfolio.cash -= cost_t
+                            old_t = self.portfolio.positions.get(code)
+                            if old_t:
+                                new_shares_t = old_t.shares + shares_t
+                                avg_price_t = (old_t.total_cost + cost_t) / new_shares_t
+                                self.portfolio.positions[code] = Position(
+                                    stock_code=code, stock_name=name,
+                                    buy_date=old_t.buy_date, buy_price=round(avg_price_t, 2),
+                                    shares=new_shares_t, total_cost=old_t.total_cost + cost_t,
+                                    current_price=current_price, market_value=new_shares_t * current_price,
+                                    peak_price=max(old_t.peak_price, current_price),
+                                    add_count=old_t.add_count, hold_since=old_t.hold_since,
+                                )
+                            self._update_value()
+                            self._save()
+                            logger.info("做T买入: %s %.2f元 %s", name, current_price, buy_reason)
+                            if hasattr(self, '_messages') and self._messages is not None:
+                                self._messages.append(f"  🔄 做T买入 {name}({code}) {current_price:.2f}元×{shares_t}股")
 
         # ── 追涨检测（涨太多不买，跌了才是机会） ──
         chase_penalty = 1.0
@@ -650,15 +672,6 @@ class PaperTrading:
                 logger.info("当日加仓已满%d次，跳过 %s", today_adds, name)
                 return None
 
-        # ── 单票仓位上限：持仓市值不超过总资产20% ──
-        self._update_value()
-        if code in self.portfolio.positions:
-            pos_val = self.portfolio.positions[code].market_value
-            max_allowed = self.portfolio.total_value * 0.20
-            if pos_val >= max_allowed:
-                logger.info("单票仓位已达上限20%%(%d元→%d元)，跳过买入 %s", pos_val, max_allowed, name)
-                return None
-
         # ── 买入（动态仓位 + 大盘/预测过滤 + 情绪调节 + 日内趋势） ──
         if not trade:
             ratio = get_ratio(score) * chase_penalty * sentiment_adj * intraday_adj * sector_adj * morning_adj * vol_adj
@@ -682,14 +695,15 @@ class PaperTrading:
                             logger.info("60分K线趋势向下，%s 跳过买入", name)
                         ratio = 0
                 if ratio > 0:
-                    trade = self._buy_position(code, name, current_price, ratio, 
+                    ratio = self._adaptive_ratio(ratio)
+                    trade = self._buy_position(code, name, current_price, ratio,
                         f"评分{score}分买入{ratio*100:.0f}%仓位·{prediction['direction'] if prediction else '无预测'}·大盘{'跌' if market_declining else '稳'}",
                         add_count=0)
             elif ratio > 0 and code in self.portfolio.positions and score >= 65:
                 pos = self.portfolio.positions.get(code)
                 if pos and (pos.profit_pct > 0 or (pos.profit_pct > -5 and pos.add_count < 2)) and consecutive_days_down < 3:  # 盈利或浅亏(<5%)允许加仓
                     # 金字塔加仓：次数越多，加的越少，门槛越高
-                    add_ratios = [0.15, 0.10, 0.05]
+                    add_ratios = [0.10, 0.07, 0.04]
                     add_scores = [55, 60, 65]
                     if pos.add_count < len(add_ratios):
                         idx = pos.add_count
@@ -874,12 +888,36 @@ class PaperTrading:
             # T+1: 当天买入不能当天卖出
             if pos.buy_date == today_str:
                 pass
+            # ── 组合回撤熔断：回撤>15%时强制降仓 ──
+            if not trade and self._drawdown_mode:
+                logger.info("回撤风控: %s 回撤>15%%，强制减半仓", name)
+                sell_shares_dd = pos.shares // 2
+                if sell_shares_dd >= 100:
+                    trade = self._sell_partial(code, current_price, sell_shares_dd, "回撤风控减半")
+                elif pos.shares >= 100:
+                    trade = self._sell_position(code, current_price, "回撤风控清仓")
+            # ── 最小持有时间：买入后30分钟内不允许卖出（防止分钟级追涨杀跌） ──
+            if not trade and pos.buy_date == today_str:
+                from datetime import datetime as _dt_buy, time as _tm_buy
+                now_t_buy = _dt_buy.now()
+                buy_dt = _dt_buy.strptime(today_str + " 09:31", "%Y-%m-%d %H:%M")
+                elapsed_min = (now_t_buy - buy_dt).total_seconds() / 60
+                if elapsed_min < self._min_hold_time_minutes and _dt_buy.now().time() < _tm_buy(15, 0):
+                    logger.info("最小持有保护: %s 买入%.0f分钟<%d分钟，暂不卖出", name, elapsed_min, self._min_hold_time_minutes)
+                    # 阻止后续所有卖出路径
+                    skip_sell = True
+                else:
+                    skip_sell = False
+            else:
+                skip_sell = False
+
             # ── 仓位过高时加速卖出（独立于下方elif链，先降仓到安全线） ──
-            self._update_value()
-            high_pos_ratio = (self.portfolio.total_value - self.portfolio.cash) / self.portfolio.total_value
-            if (high_pos_ratio >= 0.70 and score < sell_th + 5 and not trade
-                and consecutive_days_down < 2 and pos.buy_date != today_str):
-                heavy_drop_here = (score_info.get("change_pct", 0) < -5)
+            if not trade and not skip_sell:
+                self._update_value()
+                high_pos_ratio = (self.portfolio.total_value - self.portfolio.cash) / self.portfolio.total_value
+                if (high_pos_ratio >= 0.70 and score < sell_th + 5 and not trade
+                    and consecutive_days_down < 2 and pos.buy_date != today_str):
+                    heavy_drop_here = (score_info.get("change_pct", 0) < -5)
                 if not heavy_drop_here:
                     trade = self._sell_position(code, current_price,
                         f"减仓降仓·评分{score}·仓位{high_pos_ratio*100:.0f}%")
@@ -893,73 +931,28 @@ class PaperTrading:
                 logger.info("阴跌检测: %s 连跌%d天 累计亏%.1f%%，止损卖出", name, consecutive_days_down, abs(pos.profit_pct))
                 trade = self._sell_position(code, current_price, f"阴跌止损·连跌{consecutive_days_down}天·亏{abs(pos.profit_pct):.0f}%")
             elif score < sell_th:
-                # 仓位过高时(>60%)跳过保护直达卖出
-                high_pos_score = high_pos_ratio >= 0.60
-                # 被拦卖出追踪：同一股票多次触发时逐步减弱保护
-                block_count = self._blocked_sells.get(code, 0)
-                if block_count >= 3 or high_pos_score:
-                    trade = self._sell_position(code, current_price,
-                        f"评分{score}·第{block_count+1}次触发·强制卖出")
-                    self._blocked_sells[code] = 0
-                    logger.info("第%d次触发评分%d，%s 强制全部卖出", block_count+1, score, name)
-                elif block_count >= 2:
-                    logger.info("第%d次触发评分%d，%s 保护减弱（跳过缩量+新买保护）", block_count+1, score, name)
-                # 卖飞保护1：缩量回调不卖（量<0.7均值=惜售，不是出货）（触发≥2次跳过）
-                if not trade and block_count < 2:
-                    try:
-                        vol_arr = score_info.get("volumes_arr", np.array([]))
-                        if len(vol_arr) >= 5:
-                            avg_vol = np.mean(vol_arr[-6:-1]) if len(vol_arr) >= 6 else np.mean(vol_arr[-5:])
-                            last_vol = vol_arr[-1]
-                            if avg_vol > 0 and last_vol < avg_vol * 0.7:
-                                logger.info("缩量回调保护: %s 评分%d 量比%.1f, 只卖一半", name, score, last_vol/avg_vol)
-                                sell_shares = pos.shares // 2
-                                if sell_shares >= 100:
-                                    trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·缩量回调减半")
-                    except: pass
-                # 卖飞保护2：刚买1-2天，评分接近阈值时等一等
-                if not trade:
+                # ── 简化卖出保护：仅2层，不再用blocked_sells计数器 ──
+                # 层1: 大盘暴跌保护（仅仓位不重时）
+                from src.scoring import get_market_sentiment
+                s_lv, _ = get_market_sentiment()
+                is_market_crash = s_lv <= -1 and heavy_drop
+                if is_market_crash and high_pos_ratio < 0.60:
+                    logger.info("大盘暴跌+仓位%.0f%% <60%%，%s 评分%d暂不卖出等反弹", high_pos_ratio*100, name, score)
+                # 层2: 新仓保护（持仓≤2天且评分接近阈值，卖一半而非全拦）
+                elif not trade:
                     days_held_p = 99
                     try:
                         from datetime import date as dt_date
                         days_held_p = (dt_date.today() - dt_date.fromisoformat(pos.buy_date)).days
                     except: pass
-                    if days_held_p <= 2 and score >= sell_th - 5:
-                        logger.info("刚买入%d天保护: %s 评分%d(阈值%d) 观察中", days_held_p, name, score, sell_th)
-                # 卖飞保护3：价格在MA20上方 + RSI不超卖 = 趋势仍在
-                if not trade:
-                    kline_ma5 = score_info.get("ma5", 0)
-                    kline_ma20 = score_info.get("ma20", 0)
-                    rsi_val = score_info.get("rsi", 50)
-                    if current_price > kline_ma20 and kline_ma20 > 0 and rsi_val > 35:
-                        logger.info("MA20支撑保护: %s 现价%.2f>MA20%.2f RSI=%d, 只卖一半", 
-                            name, current_price, kline_ma20, rsi_val if isinstance(rsi_val, int) else int(rsi_val))
+                    if days_held_p <= 2 and score >= sell_th - 5 and high_pos_ratio < 0.60:
+                        logger.info("新仓%d天保护: %s 评分%d(阈值%d) 卖一半观望", days_held_p, name, score, sell_th)
                         sell_shares = pos.shares // 2
                         if sell_shares >= 100:
-                            trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·MA20支撑减半")
-                # 趋势保护：均线多头
-                if not trade:
-                    kline_ma5 = score_info.get("ma5", 0)
-                    kline_ma20 = score_info.get("ma20", 0)
-                    if kline_ma5 > kline_ma20 and score >= 35:
-                        sell_shares = pos.shares // 2
-                        if sell_shares >= 100:
-                            trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·趋势向上减半")
-                # 大盘大跌日(>1.5%)或市场恐慌时，评分卖出降为卖一半
-                from src.scoring import get_market_sentiment
-                s_lv, _ = get_market_sentiment()
-                market_panic = s_lv <= -1
-                if not trade and (market_panic or market_declining):
-                    sell_shares = pos.shares // 2
-                    if sell_shares >= 100:
-                        trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·恐慌减半")
-                        logger.info("恐慌/跌势中评分%s，%s 减半持仓", score, name)
-                # 追踪被拦次数：全拦 +1，部分卖出重置
-                if trade:
-                    self._blocked_sells[code] = 0
-                else:
-                    self._blocked_sells[code] = block_count + 1
-                    logger.info("卖出保护全拦: %s 第%d次 评分%d", name, block_count + 1, score)
+                            trade = self._sell_partial(code, current_price, sell_shares, f"评分{score}·新仓减半")
+                    else:
+                        trade = self._sell_position(code, current_price, f"评分{score}·建议卖出")
+                        logger.info("评分%d低于阈值%d，%s 全部卖出", score, sell_th, name)
             else:
                 # 自适应止损（基于ATR，与stop_loss_pct对齐）
                 atr_value = score_info.get("atr", 0)
@@ -992,6 +985,11 @@ class PaperTrading:
         shares = min(shares, pos.shares)
         if shares <= 0:
             return None
+        # 若剩余股数不足100股，自动转为全仓卖出（避免切成碎股）
+        remaining = pos.shares - shares
+        if remaining > 0 and remaining < 100:
+            shares = pos.shares  # 全卖
+            remaining = 0
         fee = self._calc_commission(shares * price, code) + shares * price * self.stamp_duty
         sell_value = shares * price - fee
         profit_pct = (sell_value / (pos.total_cost * shares / pos.shares) - 1) * 100 if pos.total_cost > 0 else 0
@@ -1031,19 +1029,33 @@ class PaperTrading:
             comm = max(amount * self.commission, self.min_commission)
         return comm + amount * self.transfer_fee
 
-    def _buy_position(self, code, name, price, ratio, reason, add_count=0):
-        """买入（带总仓位和板块控制）"""
+    def _check_buy_limits(self, code: str, name: str, price: float, ratio: float) -> tuple[bool, str]:
+        """统一买入风控检查：返回 (允许, 拒绝原因)
+        被 _buy_position 和所有外部买入路径调用
+        """
         if len(self.portfolio.positions) >= self.max_positions and code not in self.portfolio.positions:
-            return None
+            return False, f"持仓数量上限{self.max_positions}只"
 
-        # ── 总仓位控制：持仓市值占比不超过 max_total_ratio ──
         self._update_value()
+
+        # ── 卖出冷却期检查：亏损卖出后N天禁止买入 ──
+        cooldown_until = self.sell_cooldown.get(code, "")
+        if cooldown_until and date.today().isoformat() < cooldown_until:
+            return False, f"卖出冷却期未过(至{cooldown_until})"
+
+        # ── 组合回撤检查 ──
+        self._peak_value = max(self._peak_value, self.portfolio.total_value)
+        drawdown = (self._peak_value - self.portfolio.total_value) / self._peak_value * 100 if self._peak_value > 0 else 0
+        self._drawdown_mode = drawdown > 15
+        if self._drawdown_mode:
+            return False, f"组合回撤{drawdown:.0f}%>15%，进入风控模式禁止新开仓"
+
+        # ── 总仓位控制 ──
         current_pos_ratio = (self.portfolio.total_value - self.portfolio.cash) / self.portfolio.total_value
         if current_pos_ratio >= self.max_total_ratio:
-            logger.info("总仓位已达%.0f%%上限，跳过买入 %s", self.max_total_ratio * 100, name)
-            return None
+            return False, f"总仓位已达{self.max_total_ratio*100:.0f}%上限"
 
-        # ── 板块控制：单板块持仓不超过 max_sector_ratio ──
+        # ── 板块控制（仅新开仓） ──
         if code not in self.portfolio.positions:
             from src.sectors import get_sector_tag
             sector = get_sector_tag(code)
@@ -1053,21 +1065,50 @@ class PaperTrading:
                     if get_sector_tag(pcode) == sector:
                         sector_value += pos.market_value
                 sector_ratio = sector_value / self.portfolio.total_value if self.portfolio.total_value > 0 else 0
-                # 加上本次买入后的预估占比
                 buy_amount = self.portfolio.cash * ratio
                 new_sector_ratio = (sector_value + buy_amount) / self.portfolio.total_value
                 if new_sector_ratio > self.max_sector_ratio:
-                    logger.info("板块[%s]已达%.0f%%上限(%.0f%%)，跳过买入 %s",
-                                sector, self.max_sector_ratio * 100, new_sector_ratio * 100, name)
-                    return None
-                # ── 同板块股票数量限制（不超过2只） ──
-                sector_count = 0
-                for pcode in self.portfolio.positions:
-                    if get_sector_tag(pcode) == sector:
-                        sector_count += 1
+                    return False, f"板块[{sector}]已达{self.max_sector_ratio*100:.0f}%上限"
+                sector_count = sum(1 for pcode in self.portfolio.positions if get_sector_tag(pcode) == sector)
                 if sector_count >= 2:
-                    logger.info("板块[%s]已有%d只持仓，不再买入同板块%s", sector, sector_count, name)
-                    return None
+                    return False, f"板块[{sector}]已有{sector_count}只持仓，同板块最多2只"
+
+        # ── 单票集中度控制 ──
+        existing_market_value = 0
+        if code in self.portfolio.positions:
+            existing_market_value = self.portfolio.positions[code].market_value
+        buy_amount = self.portfolio.cash * ratio
+        new_total = existing_market_value + buy_amount
+
+        if new_total > self.max_single_value:
+            return False, f"单票市值{new_total/10000:.0f}万超过上限{self.max_single_value/10000:.0f}万"
+
+        if self.portfolio.total_value > 0:
+            new_ratio = new_total / self.portfolio.total_value
+            if new_ratio > self.max_single_ratio:
+                return False, f"单票占比{new_ratio*100:.0f}%超过上限{self.max_single_ratio*100:.0f}%"
+
+        return True, ""
+
+    def _adaptive_ratio(self, base_ratio: float) -> float:
+        """大资金时自动降低单笔比例，防止绝对金额失控"""
+        if self.portfolio.total_value > 1_000_000:
+            return base_ratio * 0.5
+        elif self.portfolio.total_value > 500_000:
+            return base_ratio * 0.7
+        elif self.portfolio.total_value > 200_000:
+            return base_ratio * 0.85
+        return base_ratio
+
+
+    def _buy_position(self, code, name, price, ratio, reason, add_count=0):
+        """买入（带总仓位和板块控制）"""
+        # ── 统一风控检查 ──
+        ok, reason_deny = self._check_buy_limits(code, name, price, ratio)
+        if not ok:
+            logger.info("风控拦截 %s(%s): %s", name, code, reason_deny)
+            self.buy_recommendations.append(f"{name}({code}) 因{reason_deny}未成交")
+            return None
 
         amount = self.portfolio.cash * ratio
         if amount < 1000:
@@ -1167,6 +1208,17 @@ class PaperTrading:
         profit_amount = sell_value - pos.total_cost
         self.portfolio.cash += sell_value
         del self.portfolio.positions[code]
+
+        # ── 卖出冷却期：亏损卖出后N天禁止重新买入 ──
+        from datetime import timedelta as _td
+        if profit_pct < 0:
+            cooldown_days = 1 if profit_pct >= -3 else (3 if profit_pct >= -8 else 5)
+            cooldown_until = (date.today() + _td(days=cooldown_days)).isoformat()
+            self.sell_cooldown[code] = cooldown_until
+            logger.info("卖出冷却: %s 亏%.1f%% 冷却%d天 至%s", pos.stock_name, abs(profit_pct), cooldown_days, cooldown_until)
+        else:
+            self.sell_cooldown.pop(code, None)  # 盈利卖出移除冷却(可立即重新买入)
+
         logger.info("模拟卖出: %s %.2f元 盈亏%+.2f%%", pos.stock_name, price, profit_pct)
         trade = TradeRecord(
             stock_code=code, stock_name=pos.stock_name,

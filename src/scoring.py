@@ -926,21 +926,23 @@ def _score_divergence(closes, highs, lows, price) -> dict:
 
 
 def _score_intraday(change_pct: float) -> dict:
-    """日内涨幅调整：涨太多扣分(追高惩罚)，跌是机会加分(低吸奖励)"""
+    """日内涨幅调整：涨太快扣分，跌太多也扣分（趋势市不追跌杀涨）"""
     if change_pct == 0:
         return {"score": 0, "desc": ""}
 
-    if change_pct > 4:
-        return {"score": -15, "desc": f"今日涨{change_pct:+.1f}%过高❌追高惩罚"}
+    if change_pct > 7:
+        return {"score": -10, "desc": f"今日涨{change_pct:+.1f}%过高⚠️ 注意回调风险"}
+    elif change_pct > 4:
+        return {"score": -3, "desc": f"今日涨{change_pct:+.1f}%偏强⚡ 小仓参与"}
     elif change_pct > 2:
-        return {"score": -8, "desc": f"今日涨{change_pct:+.1f}%偏高⚠️追高警惕"}
-    elif change_pct < -7:
-        return {"score": -5, "desc": f"今日跌{change_pct:+.1f}%趋势已坏❌不抄底"}
-    elif change_pct < -5:
-        return {"score": 0, "desc": f"今日跌{change_pct:+.1f}%观望⚠️"}
-    elif change_pct < -3:
-        return {"score": 4, "desc": f"今日跌{change_pct:+.1f}%关注+4"}
-    return {"score": 0, "desc": ""}
+        return {"score": 0, "desc": f"今日涨{change_pct:+.1f}%正常强度"}
+    elif change_pct > -3:
+        return {"score": 0, "desc": ""}
+    elif change_pct > -5:
+        return {"score": -3, "desc": f"今日跌{change_pct:+.1f}%偏弱⚠️"}
+    elif change_pct > -7:
+        return {"score": -5, "desc": f"今日跌{change_pct:+.1f}%趋势偏弱❌"}
+    return {"score": -10, "desc": f"今日跌{change_pct:+.1f}%趋势已坏❌"}
 
 
 # ══════════════════════════════════════════════

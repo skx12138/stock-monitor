@@ -1,13 +1,107 @@
 """
 次日涨势预判 — 根据今日数据推算下一交易日走势（周五时自动预测下周一）
 """
+import json
 import logging
-from datetime import datetime
+import os
+from datetime import datetime, date, timedelta
 
 import numpy as np
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+
+# ══════════════════════════════════════════════
+#  预测准确率追踪
+# ══════════════════════════════════════════════
+
+class PredictionStats:
+    """追踪预测准确率，准确率<50%时自动降级为震荡"""
+
+    def __init__(self, stats_file: str = "prediction_stats.json"):
+        self.stats_file = stats_file
+        self.records: dict[str, list] = {}
+        self._load()
+
+    def _load(self):
+        if os.path.exists(self.stats_file):
+            try:
+                with open(self.stats_file, "r", encoding="utf-8") as f:
+                    self.records = json.load(f)
+            except Exception:
+                self.records = {}
+
+    def _save(self):
+        try:
+            trimmed = {}
+            for code, recs in self.records.items():
+                trimmed[code] = recs[-365:]  # 仅保留最近365天
+            with open(self.stats_file, "w", encoding="utf-8") as f:
+                json.dump(trimmed, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.debug("保存预测统计失败: %s", e)
+
+    def record(self, code: str, direction: str, confidence: int,
+               actual_chg: float = None, correct: bool = None):
+        """记录一次预测结果"""
+        if code not in self.records:
+            self.records[code] = []
+        self.records[code].append({
+            "date": date.today().isoformat(),
+            "direction": direction,
+            "confidence": confidence,
+            "actual_chg": actual_chg,
+            "correct": correct,
+        })
+        self._save()
+
+    def get_accuracy(self, code: str, days: int = 30) -> float:
+        """返回最近N天内的准确率，0-1"""
+        recs = self.records.get(code, [])
+        cutoff = (date.today() - timedelta(days=days)).isoformat()
+        recent = [r for r in recs if r.get("date", "") >= cutoff and r.get("correct") is not None]
+        if not recent:
+            return 0.0
+        correct_count = sum(1 for r in recent if r["correct"])
+        return correct_count / len(recent)
+
+    def get_reliability(self, code: str, min_records: int = 5) -> bool:
+        """准确率>50%为可靠，数据不足时默认可靠"""
+        recs = self.records.get(code, [])
+        total = sum(1 for r in recs if r.get("correct") is not None)
+        if total < min_records:
+            return True
+        acc = self.get_accuracy(code)
+        return acc > 0.50
+
+    def get_total_predictions(self, code: str) -> int:
+        """该股票的总预测次数"""
+        return len(self.records.get(code, []))
+
+
+_stats = PredictionStats()
+
+
+def update_prediction_outcome(code: str, actual_chg: float):
+    """由外部(次日)调用，用实际涨跌幅更新预测结果"""
+    recs = _stats.records.get(code, [])
+    if not recs:
+        return
+    for r in reversed(recs):
+        if r.get("actual_chg") is None:
+            direction = r.get("direction", "")
+            correct = (
+                (direction == "看涨" and actual_chg > 0)
+                or (direction == "看跌" and actual_chg < 0)
+                or (direction == "震荡" and -1 < actual_chg < 1)
+            )
+            r["actual_chg"] = actual_chg
+            r["correct"] = correct
+            _stats._save()
+            logger.info("预测结果更新: %s -> 实际%.1f%% 预测%s %s",
+                        direction, actual_chg, "正确✅" if correct else "错误❌")
+            break
 
 
 def _target_label() -> str:
@@ -16,7 +110,7 @@ def _target_label() -> str:
 
 
 def predict_tomorrow(closes: np.ndarray, highs: np.ndarray, lows: np.ndarray,
-                     volumes: np.ndarray, price: float) -> dict:
+                     volumes: np.ndarray, price: float, code: str = "") -> dict:
     """根据今日数据预判下一交易日涨跌（周五自动预测下周一）
     升级版V2：加入ATR趋势强度、MACD动量、KDJ超买超卖、量价配合
 
@@ -172,6 +266,24 @@ def predict_tomorrow(closes: np.ndarray, highs: np.ndarray, lows: np.ndarray,
         direction = "震荡"
         confidence = 50 + net * 5
         score_adj = net
+
+    # ── 可靠性检查：预测准确率<50%的股票降级为震荡 ──
+    try:
+        if code and not _stats.get_reliability(code):
+            acc = _stats.get_accuracy(code) * 100
+            logger.info("预测可靠性: %s 准确率%.0f%%<50%%，降级为震荡", code, acc)
+            direction = "震荡"
+            confidence = 50
+            score_adj = 0
+    except Exception:
+        pass
+
+    # ── 记录预测 ──
+    try:
+        if code:
+            _stats.record(code, direction, int(confidence))
+    except Exception:
+        pass
 
     return {
         "direction": direction,

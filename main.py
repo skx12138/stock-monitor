@@ -429,7 +429,6 @@ def main():
             last_date = now.date()
             dedup.reset()
             briefed_today.clear()
-            paper._blocked_sells.clear()
             dip_buy_done_today = False
             close_buy_done_today = False
             summary_done_today = False
@@ -786,8 +785,30 @@ def main():
                                                 f"预测: {pred_str2} 评分: {c['score']}\n"
                                                 f"持仓: {_ref_range(c['code'], price)}{pos_str2}")
                 # 尾盘卖出：大跌日不止损（避免割在最低点）
-                # 检查今天是否普跌日
-                today_is_bloody = False
+                # 检查个股是否暴跌日（个股跌>7%或板块跌>3%）
+                def _is_bloody_for(pcode: str) -> bool:
+                    try:
+                        rt_bloody = fetch_realtime(pcode)
+                        if rt_bloody:
+                            chg_bloody = rt_bloody.get("change_pct", 0)
+                            if chg_bloody <= -7:
+                                return True
+                        from src.sectors import get_sector_tag
+                        from src.fetcher import fetch_sector_performance
+                        sector_bloody = get_sector_tag(pcode)
+                        if sector_bloody:
+                            sectors_bloody = fetch_sector_performance()
+                            if sectors_bloody:
+                                for s in sectors_bloody:
+                                    clean_tag = sector_bloody.replace("[", "").replace("]", "")
+                                    if clean_tag in s.get("name", "") or s.get("name", "") in clean_tag:
+                                        if s.get("change_pct", 0) <= -3:
+                                            return True
+                                        break
+                    except:
+                        pass
+                    return False
+                today_is_bloody = False  # 改为循环内判断
                 try:
                     sh_check = fetch_market_index("000001")
                     if sh_check and sh_check.get("change_pct", 0) <= -1.5:
@@ -830,11 +851,11 @@ def main():
                             if days_held > days_max:
                                 sell_action = paper._sell_position(pcode, sell_price, f"持仓{days_held}天未涨 保本出")
                         except: pass
-                    elif is_etf and pos.profit_pct <= -3 and not today_is_bloody:
+                    elif is_etf and pos.profit_pct <= -3 and not today_is_bloody and not _is_bloody_for(pcode):
                         sell_action = paper._sell_position(pcode, sell_price, f"ETF止损{pos.profit_pct:.1f}%")
-                    elif pos.profit_pct <= stop_loss and not today_is_bloody:
+                    elif pos.profit_pct <= stop_loss and not today_is_bloody and not _is_bloody_for(pcode):
                         sell_action = paper._sell_position(pcode, sell_price, f"尾盘止损{pos.profit_pct:.1f}%")
-                    elif pos.profit_pct <= max(stop_loss - 3, -10) and today_is_bloody:
+                    elif pos.profit_pct <= max(stop_loss - 3, -10) and (today_is_bloody or _is_bloody_for(pcode)):
                         sell_action = paper._sell_position(pcode, sell_price, f"尾盘止损{pos.profit_pct:.1f}%（普跌日放宽）")
                     if sell_action:
                         profit_icon = "🟢" if sell_action.profit_pct >= 0 else "🔴"
