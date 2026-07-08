@@ -5,3 +5,4 @@ credentials.json
 dynamic_sectors.json
 *.bat
 *.log
+.env
