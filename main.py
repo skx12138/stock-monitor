@@ -366,6 +366,21 @@ def main():
     paper = PaperTrading()
     order_mgr = OrderManager()
 
+    # ── 买前评分检查：评分<55的股票不抄底/追涨 ──
+    def _check_score(code_s: str, price_s: float, name_s: str) -> bool:
+        kline_s = fetch_kline(code_s, 60)
+        if kline_s is None:
+            return False
+        from src.scoring import compute_score
+        c_s = kline_s["close"].values.astype(float)
+        v_s = kline_s["volume"].values.astype(float) if "volume" in kline_s.columns else np.array([])
+        ff_s = fetch_fund_flow(code_s)
+        sc_s = compute_score(c_s, v_s, price_s, ff_s, code=code_s)
+        if sc_s.get("score", 0) < 55:
+            logger.info("评分%d<55，跳过抄底/追涨: %s(%s)", sc_s.get("score", 0), name_s, code_s)
+            return False
+        return True
+
     # 盘中价格追踪（用于检测跳水/深V）
     price_history: dict[str, list] = {}  # code -> [(time, price)]
     intraday_alerts: set = set()         # 已推送的异动预警
@@ -1342,22 +1357,8 @@ def main():
                             if ma5_vv[valid_vv][-1] < ma20_vv[valid_vv][-1]:
                                 should_buy = False
                                 analysis_reason = "均线空头排列，反弹可能只是昙花一现"
-                    # ── 买前评分检查：评分<55的股票不抄底/追涨 ──
-                    def _check_score(code_s: str, price_s: float, name_s: str) -> bool:
-                        kline_s = fetch_kline(code_s, 60)
-                        if kline_s is None:
-                            return False
-                        from src.scoring import compute_score
-                        c_s = kline_s["close"].values.astype(float)
-                        v_s = kline_s["volume"].values.astype(float) if "volume" in kline_s.columns else np.array([])
-                        ff_s = fetch_fund_flow(code_s)
-                        sc_s = compute_score(c_s, v_s, price_s, ff_s, code=code_s)
-                        if sc_s.get("score", 0) < 55:
-                            logger.info("评分%d<55，跳过抄底/追涨: %s(%s)", sc_s.get("score", 0), name_s, code_s)
-                            return False
-                        return True
-
-                    if should_buy and vol_ok and code not in paper.portfolio.positions:
+                    # ── 买前评分检查已提到main()顶层 ──
+                    if _check_score(code, display, price) and should_buy and vol_ok and code not in paper.portfolio.positions:
                         buy_trade = paper._buy_position(code, display, price, vv_ratio, analysis_reason)
                         if buy_trade:
                             notify(config, f"🟢 买入 {display}({code})",
