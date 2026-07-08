@@ -594,13 +594,14 @@ def main():
                     # 趋势调整
                     trend_adj = 3 if trend_desc in ("低开高走","探底回升") else (-3 if trend_desc in ("高开低走","单边下跌") else 0)
                     t_adj_score = t_score - sector_penalty + trend_adj
-                    # 买入：门槛55，大盘偏空时提高门槛
-                    buy_th = 55 - mt["bias"] * 2  # 偏多=53(易买), 偏空=57(难买)
+                    # 买入：门槛55，大盘偏空时提高门槛 + _check_score过滤
+                    buy_th = 55 - mt["bias"] * 2
                     if not t_has and t_adj_score >= buy_th and t_pred["direction"] == "看涨" and t_pred["confidence"] >= 55:
-                        base_ratio = 0.25 if t_sp["duration"] == "长线" else (0.10 if t_sp["duration"] == "短线" else 0.18)
-                        ratio = round(base_ratio * (1 + mt["bias"] * 0.08), 2)
-                        buy_t = paper._buy_position(t_code, t_name, t_price, ratio,
-                            f"开盘买入·评分{t_score}·预测{t_pred['direction']}·{t_sp['duration']}", add_count=0)
+                        if _check_score(t_code, t_price, t_name):
+                            base_ratio = 0.25 if t_sp["duration"] == "长线" else (0.10 if t_sp["duration"] == "短线" else 0.18)
+                            ratio = round(base_ratio * (1 + mt["bias"] * 0.08), 2)
+                            buy_t = paper._buy_position(t_code, t_name, t_price, ratio,
+                                f"开盘买入·评分{t_score}·预测{t_pred['direction']}·{t_sp['duration']}", add_count=0)
                         if buy_t:
                             trade_lines.append(f"  🟢 买入[{t_sp['duration']}] {t_name}({t_code}) {t_price:.2f}元×{buy_t.shares}股 评分{t_score}")
                     elif t_has:
@@ -736,8 +737,9 @@ def main():
                                 logger.info("尾盘情绪[%s]趋势[%s] 仓位%.0f%%→%.0f%%", s_label, t_desc, 0.25 if c["code"].startswith(("5", "1")) else 0.20, buy_ratio*100)
                             except: pass
                             if buy_ratio >= 0.03:
-                                buy_trade = paper._buy_position(c["code"], c["name"], price, buy_ratio,
-                                f"尾盘买入·{pred.get('target_label','明日')}{pred['direction'] if k_pred is not None else ''}评分{c['score']}", add_count=0)
+                                if _check_score(c["code"], price, c["name"]):
+                                    buy_trade = paper._buy_position(c["code"], c["name"], price, buy_ratio,
+                                    f"尾盘买入·{pred.get('target_label','明日')}{pred['direction'] if k_pred is not None else ''}评分{c['score']}", add_count=0)
                                 if buy_trade:
                                     pos_info = paper.portfolio.positions.get(c["code"])
                                     pos_str = f""
@@ -782,8 +784,9 @@ def main():
                                             add_ratio_w = round(0.10 * s_map.get(s_level, 1.0) * next((v for k, v in t_map.items() if t_desc.startswith(k)), 1.0), 2)
                                         except: pass
                                         if add_ratio_w < 0.03: add_ratio_w = 0.03
-                                        add_trade = paper._buy_position(c["code"], c["name"], price, add_ratio_w,
-                                            f"尾盘加仓·评分{c['score']}", add_count=pos.add_count + 1)
+                                        if _check_score(c["code"], price, c["name"]):
+                                            add_trade = paper._buy_position(c["code"], c["name"], price, add_ratio_w,
+                                                f"尾盘加仓·评分{c['score']}", add_count=pos.add_count + 1)
                                         if add_trade:
                                             pos_info = paper.portfolio.positions.get(c["code"])
                                             pos_str2 = f""
@@ -1211,7 +1214,9 @@ def main():
                                 analysis_parts.append(f"     明日预测看涨({pred_ld['confidence']}%)✅ — 反弹概率大")
                                 # 条件满足：缩量+首次+预测看涨 → 自动买入
                                 if vol_ratio_ld < 1.5 and not consecutive and pred_ld["confidence"] >= 55:
-                                    buy_ld = paper._buy_position(code, display, price, 0.05,
+                                    # 评分检查
+                                    if _check_score(code, price, display):
+                                        buy_ld = paper._buy_position(code, display, price, 0.05,
                                         f"跌停抄底·{pred_ld['direction']}{pred_ld['confidence']}%·缩量{vol_ratio_ld:.1f}倍")
                                     if buy_ld:
                                         analysis_parts.append(f"     🟢 自动买入5%仓位抄底")
@@ -1337,9 +1342,22 @@ def main():
                             if ma5_vv[valid_vv][-1] < ma20_vv[valid_vv][-1]:
                                 should_buy = False
                                 analysis_reason = "均线空头排列，反弹可能只是昙花一现"
+                    # ── 买前评分检查：评分<55的股票不抄底/追涨 ──
+                    def _check_score(code_s: str, price_s: float, name_s: str) -> bool:
+                        kline_s = fetch_kline(code_s, 60)
+                        if kline_s is None:
+                            return False
+                        from src.scoring import compute_score
+                        c_s = kline_s["close"].values.astype(float)
+                        v_s = kline_s["volume"].values.astype(float) if "volume" in kline_s.columns else np.array([])
+                        ff_s = fetch_fund_flow(code_s)
+                        sc_s = compute_score(c_s, v_s, price_s, ff_s, code=code_s)
+                        if sc_s.get("score", 0) < 55:
+                            logger.info("评分%d<55，跳过抄底/追涨: %s(%s)", sc_s.get("score", 0), name_s, code_s)
+                            return False
+                        return True
+
                     if should_buy and vol_ok and code not in paper.portfolio.positions:
-                        # ETF优先：ETF给更高仓位
-                        vv_ratio = 0.15 if code.startswith(("5", "1")) else 0.10
                         buy_trade = paper._buy_position(code, display, price, vv_ratio, analysis_reason)
                         if buy_trade:
                             notify(config, f"🟢 买入 {display}({code})",
@@ -1404,6 +1422,9 @@ def main():
                         if code.startswith(("5", "1")):
                             final_ratio = min(final_ratio * 1.5, 0.20)
                         if final_ratio >= 0.03:
+                            if not _check_score(code, price, display):
+                                final_ratio = 0
+                        if final_ratio >= 0.03:
                             buy_trade = paper._buy_position(code, display, price, final_ratio,
                                 f"急跌{panic_tier}%·RSI{rsi_val:.0f}·仓位{final_ratio:.0%}")
                             if buy_trade:
@@ -1448,7 +1469,9 @@ def main():
                                 should_buy_daily = True
                                 buy_reason_daily = f"今日暴跌{abs(chg):.0f}%·RSI{rsi_daily:.0f}超卖"
                     if should_buy_daily and code not in paper.portfolio.positions:
-                        daily_ratio = 0.08 if code.startswith(("5", "1")) else 0.05
+                        if not _check_score(code, price, d_display):
+                            daily_ratio = 0
+                    if should_buy_daily and code not in paper.portfolio.positions and daily_ratio > 0:
                         buy_daily = paper._buy_position(code, d_display, price, daily_ratio,
                             f"今日大跌{abs(chg):.0f}%抄底·{buy_reason_daily}")
                         if buy_daily:

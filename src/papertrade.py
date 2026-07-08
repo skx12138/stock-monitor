@@ -74,7 +74,7 @@ class PaperTrading:
         self.portfolio = Portfolio(cash=initial_cash, total_value=initial_cash)
         self.trade_dedup: dict[str, datetime] = {}
         self.trade_cooldown = 0
-        self.max_positions = 999            # 不限制持仓数量
+        self.max_positions = 5             # 同时持仓上限5只（提高集中度）
         self.max_total_ratio = 0.80         # 总仓位上限80%
         self.max_sector_ratio = 0.40         # 单板块仓位上限40%
         self.commission = 0.00025      # 股票佣金万2.5
@@ -83,8 +83,8 @@ class PaperTrading:
         self.transfer_fee = 0.00001    # 过户费万0.1
         self.min_commission = 5.0      # 股票最低佣金5元
         self.min_etf_commission = 0.1  # ETF最低佣金0.1元
-        self.trail_activate = 5.0    # 盈利5%后启动移动止盈（收紧，提高胜率）
-        self.trail_pullback = 4.0    # 从高点回撤4%触发止盈（收紧，保住利润）
+        self.trail_activate = 8.0    # 盈利8%后启动移动止盈（让利润多跑一会儿）
+        self.trail_pullback = 4.0    # 从高点回撤4%触发止盈（保住利润）
         self.enable_volatility_adjust = True
         self.enable_sector_filter = True
         self.max_single_value = 200000.0   # 单票绝对金额上限20万
@@ -211,6 +211,14 @@ class PaperTrading:
         if current_day_ret < daily_loss_limit and code not in self.portfolio.positions:
             logger.warning("风控: 当日总亏损%.1f%%超过阈值%.0f%%，暂停新开仓 %s", current_day_ret, daily_loss_limit, name)
             return None
+
+        # ── 风控1b：日亏损超过3%时暂停新开仓（从当日起始值算） ──
+        if len(self.portfolio.daily_values) >= 1 and code not in self.portfolio.positions:
+            today_start_val = self.portfolio.daily_values[-1]["value"]
+            today_loss_pct = (self.portfolio.total_value - today_start_val) / today_start_val * 100
+            if today_loss_pct < -3:
+                logger.warning("日亏损%.1f%%>3%%，暂停新开仓 %s", today_loss_pct, name)
+                return None
 
         # ── 风控2：大盘暴跌(>3%)时自动减半仓 ──
         try:
@@ -367,8 +375,8 @@ class PaperTrading:
             if sell_shares > 0:
                 trade = self._sell_partial(code, current_price, sell_shares, profit_str)
 
-        # ── 做T策略：先卖后买，赚取日内差价 ──
-        if not trade and pos and pos.shares >= 200:
+        # ── 做T策略：仅评分≥70的股票做T ──
+        if not trade and pos and pos.shares >= 200 and score >= 70:
             today_str = date.today().isoformat()
             # 最大1个T周期/股票/天
             t_key = f"{code}_{today_str}"
@@ -676,6 +684,14 @@ class PaperTrading:
         if not trade:
             ratio = get_ratio(score) * chase_penalty * sentiment_adj * intraday_adj * sector_adj * morning_adj * vol_adj
             if ratio > 0 and code not in self.portfolio.positions and sector_ok:
+                # ── 买入门槛65分：评分<65不开新仓 ──
+                if score < 65:
+                    logger.info("评分%d<65，跳过新开仓 %s", score, name)
+                    ratio = 0
+                # ── 日线空头排列不买（深跌/跌停除外） ──
+                elif not daily_bullish and not deep_drop and not limit_down:
+                    logger.info("日线空头排列，跳过新开仓 %s", name)
+                    ratio = 0
                 # 跌势时减半仓位+需看涨预测
                 if market_declining:
                     if prediction and prediction["direction"] == "看涨":
@@ -686,14 +702,6 @@ class PaperTrading:
                         logger.info("大盘跌势+深跌反弹机会(%.1f%%)，半仓买入 %s", intraday_chg, name)
                     else:
                         ratio = 0  # 无看涨预测则跳过
-                if ratio > 0:
-                    # 日K线多头检查（减少假信号）
-                    if (not daily_bullish or not minute60_bullish) and not deep_drop and not limit_down:
-                        if not daily_bullish:
-                            logger.info("日K线趋势向下，%s 跳过买入", name)
-                        else:
-                            logger.info("60分K线趋势向下，%s 跳过买入", name)
-                        ratio = 0
                 if ratio > 0:
                     ratio = self._adaptive_ratio(ratio)
                     trade = self._buy_position(code, name, current_price, ratio,
