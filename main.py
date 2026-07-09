@@ -369,13 +369,15 @@ def main():
     # ── 买前评分检查：评分<55的股票不抄底/追涨 ──
     def _check_score(code_s: str, price_s: float, name_s: str) -> bool:
         kline_s = fetch_kline(code_s, 60)
-        if kline_s is None:
+        if kline_s is None or kline_s.empty or len(kline_s) < 20:
             return False
         from src.scoring import compute_score
         c_s = kline_s["close"].values.astype(float)
         v_s = kline_s["volume"].values.astype(float) if "volume" in kline_s.columns else np.array([])
+        h_s = kline_s["high"].values.astype(float) if "high" in kline_s.columns else c_s.copy()
+        l_s = kline_s["low"].values.astype(float) if "low" in kline_s.columns else c_s.copy()
         ff_s = fetch_fund_flow(code_s)
-        sc_s = compute_score(c_s, v_s, price_s, ff_s, code=code_s)
+        sc_s = compute_score(c_s, v_s, price_s, ff_s, code=code_s, change_pct=0.0, highs=h_s, lows=l_s)
         if sc_s.get("score", 0) < 55:
             logger.info("评分%d<55，跳过抄底/追涨: %s(%s)", sc_s.get("score", 0), name_s, code_s)
             return False
