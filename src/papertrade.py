@@ -1161,7 +1161,7 @@ class PaperTrading:
             avg_price = (old.total_cost + total_cost) / new_shares / (1 + self.commission)
             self.portfolio.positions[code] = Position(
                 stock_code=code, stock_name=name,
-                buy_date=date.today().isoformat(), buy_price=round(avg_price, 2),
+                buy_date=old.buy_date, buy_price=round(avg_price, 2),
                 shares=new_shares, total_cost=old.total_cost + total_cost,
                 current_price=price, market_value=new_shares * price,
                 peak_price=max(old.peak_price, price),
