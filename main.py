@@ -625,9 +625,9 @@ def main():
                         pos = paper.portfolio.positions.get(t_code)
                         if pos and pos.buy_date != date.today().isoformat():
                             # 卖出：按策略区分阈值
-                            sell_th_base = 30 if t_sp["duration"] == "长线" else (40 if t_sp["duration"] == "短线" else 35)
+                            sell_th_base = 45 if t_sp["duration"] == "长线" else (50 if t_sp["duration"] == "短线" else 48)
                             sell_th = sell_th_base - mt["bias"] * 2  # 偏空=卖更早，偏多=多拿一会
-                            sell_trigger = t_score < sell_th or (t_pred["direction"] == "看跌" and t_pred["confidence"] >= 65)
+                            sell_trigger = t_score < sell_th or (t_pred["direction"] == "看跌" and t_pred["confidence"] >= 60)
                             if sell_trigger:
                                 sell_t = paper._sell_position(t_code, t_price,
                                     f"开盘卖出·评分{t_score}·预测{t_pred['direction']}·{t_sp['duration']}")
@@ -857,22 +857,22 @@ def main():
                         stop_loss = -3
                         days_max = 10  # ETF长线持有更久
                     elif sp["duration"] == "长线":
-                        stop_loss = -8
-                        days_max = 10
+                        stop_loss = -6
+                        days_max = 7
                     elif sp["duration"] == "短线":
-                        stop_loss = -4
+                        stop_loss = -5
                         days_max = 3
                     else:
-                        stop_loss = -5
-                        days_max = 5
-                    # 移动止盈：盈利>5%后从峰值回落2%就卖
+                        stop_loss = -6
+                        days_max = 4
+                    # 移动止盈：盈利≥4%后从峰值回落2%就卖
                     peak_profit = (pos.peak_price - pos.buy_price) / pos.buy_price * 100 if pos.buy_price > 0 else 0
-                    if pos.profit_pct >= 5 and peak_profit >= 5 and pos.profit_pct < peak_profit - 2:
+                    if pos.profit_pct >= 4 and peak_profit >= 4 and pos.profit_pct < peak_profit - 2:
                         sell_action = paper._sell_position(pcode, sell_price, 
                             f"移动止盈: 峰值{peak_profit:.1f}%→当前{pos.profit_pct:.1f}%")
-                    elif pos.profit_pct >= 12:
+                    elif pos.profit_pct >= 6:
                         sell_action = paper._sell_position(pcode, sell_price, f"尾盘止盈{pos.profit_pct:.1f}%")
-                    elif pos.profit_pct >= 8:
+                    elif pos.profit_pct >= 4:
                         sell_action = paper._sell_position(pcode, sell_price, f"尾盘止盈{pos.profit_pct:.1f}%")
                     # 时间衰减：持仓超5天还没涨
                     elif pos.profit_pct > 0 and pos.profit_pct < 2:

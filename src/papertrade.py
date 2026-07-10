@@ -83,7 +83,7 @@ class PaperTrading:
         self.transfer_fee = 0.00001    # 过户费万0.1
         self.min_commission = 5.0      # 股票最低佣金5元
         self.min_etf_commission = 0.1  # ETF最低佣金0.1元
-        self.trail_activate = 8.0    # 盈利8%后启动移动止盈（让利润多跑一会儿）
+        self.trail_activate = 5.0    # 盈利5%后启动移动止盈
         self.trail_pullback = 4.0    # 从高点回撤4%触发止盈（保住利润）
         self.enable_volatility_adjust = True
         self.enable_sector_filter = True
@@ -190,12 +190,12 @@ class PaperTrading:
             from src.optimizer import get_stock_params
             sp = get_stock_params(code)
             buy_th = sp.get("buy_threshold", 50)
-            sell_th = sp.get("sell_threshold", 48)
-            stop_loss_pct = sp.get("stop_loss", 8)
+            sell_th = sp.get("sell_threshold", 55)
+            stop_loss_pct = sp.get("stop_loss", 6)
         except:
             buy_th = 50
-            sell_th = 48
-            stop_loss_pct = 8
+            sell_th = 55
+            stop_loss_pct = 6
 
         # ── 高波动股止损收紧(ATR>3% → 止损6%) ──
         atr_val_stop = score_info.get("atr", 0)
@@ -362,13 +362,13 @@ class PaperTrading:
             # ── 分批止盈（让利润多跑一会儿，但避免切成碎股） ──
             sell_shares = 0
             profit_str = ""
-            if profit >= 30:
+            if profit >= 15:
                 sell_shares = pos.shares  # 全清
                 profit_str = f"止盈{profit:.1f}%清仓"
-            elif profit >= 20 and pos.shares >= 200:
+            elif profit >= 10 and pos.shares >= 200:
                 sell_shares = max(100, int(pos.shares * 0.5 / 100) * 100)  # 卖一半，至少100股
                 profit_str = f"止盈{profit:.1f}%卖{sell_shares}股"
-            elif profit >= 12 and pos.shares >= 200:
+            elif profit >= 6 and pos.shares >= 200:
                 sell_shares = max(100, int(pos.shares * 0.5 / 100) * 100)  # 卖一半，至少100股
                 profit_str = f"止盈{profit:.1f}%卖{sell_shares}股"
 
