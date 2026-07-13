@@ -928,7 +928,7 @@ class PaperTrading:
                     heavy_drop_here = (score_info.get("change_pct", 0) < -5)
                 else:
                     heavy_drop_here = False
-                if not heavy_drop_here and not trade:
+                if not heavy_drop_here and not trade and high_pos_ratio >= 0.70:
                     trade = self._sell_position(code, current_price,
                         f"减仓降仓·评分{score}·仓位{high_pos_ratio*100:.0f}%")
                     if trade:
