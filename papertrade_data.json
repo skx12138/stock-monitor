@@ -1,7 +1,103 @@
 {
-  "cash": 500000.0,
-  "total_value": 500000.0,
-  "positions": {},
-  "trades": [],
-  "daily_values": []
+  "cash": 431017.18022399995,
+  "total_value": 501327.98,
+  "positions": {
+    "603928": {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "buy_date": "2026-07-14",
+      "buy_price": 15.24,
+      "shares": 900,
+      "current_price": 15.23,
+      "total_cost": 13721.13716,
+      "market_value": 13707.0,
+      "profit_pct": -0.07,
+      "profit_amount": -14.14,
+      "peak_price": 16.08,
+      "add_count": 0,
+      "hold_since": "2026-07-14"
+    },
+    "600584": {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "buy_date": "2026-07-14",
+      "buy_price": 99.89,
+      "shares": 500,
+      "current_price": 102.65,
+      "total_cost": 49959.49944,
+      "market_value": 51325.0,
+      "profit_pct": 2.76,
+      "profit_amount": 1365.5,
+      "peak_price": 103.0,
+      "add_count": 1,
+      "hold_since": "2026-07-14"
+    },
+    "588200": {
+      "stock_code": "588200",
+      "stock_name": "科创芯片ETF",
+      "buy_date": "2026-07-14",
+      "buy_price": 4.418,
+      "shares": 1200,
+      "current_price": 4.399,
+      "total_cost": 5302.1831760000005,
+      "market_value": 5278.8,
+      "profit_pct": -0.43,
+      "profit_amount": -23.38,
+      "peak_price": 4.418,
+      "add_count": 0,
+      "hold_since": "2026-07-14"
+    }
+  },
+  "trades": [
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "加仓",
+      "date": "2026-07-14",
+      "price": 15.24,
+      "shares": 900,
+      "reason": "评分76分买入3%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "action": "加仓",
+      "date": "2026-07-14",
+      "price": 99.44,
+      "shares": 100,
+      "reason": "评分72分买入3%仓位·看涨·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "action": "加仓",
+      "date": "2026-07-14",
+      "price": 100.0,
+      "shares": 400,
+      "reason": "MA趋势加仓·金叉否·评分70",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "588200",
+      "stock_name": "科创芯片ETF",
+      "action": "加仓",
+      "date": "2026-07-14",
+      "price": 4.42,
+      "shares": 1200,
+      "reason": "评分67分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    }
+  ],
+  "daily_values": [
+    {
+      "date": "2026-07-14",
+      "value": 501327.98
+    }
+  ]
 }
