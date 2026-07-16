@@ -1,6 +1,6 @@
 {
-  "cash": 420499.17350399983,
-  "total_value": 495074.17,
+  "cash": 454231.2762239998,
+  "total_value": 493561.28,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -14,21 +14,6 @@
       "profit_pct": 0.0,
       "profit_amount": 0.0,
       "peak_price": 78.66,
-      "add_count": 0,
-      "hold_since": "2026-07-15"
-    },
-    "000811": {
-      "stock_code": "000811",
-      "stock_name": "冰轮环境",
-      "buy_date": "2026-07-15",
-      "buy_price": 50.7,
-      "shares": 700,
-      "current_price": 50.35,
-      "total_cost": 35499.2274,
-      "market_value": 35245.0,
-      "profit_pct": -0.69,
-      "profit_amount": -254.23,
-      "peak_price": 50.7,
       "add_count": 0,
       "hold_since": "2026-07-15"
     }
@@ -165,6 +150,72 @@
       "reason": "尾盘买入·明日震荡评分58",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-07-16",
+      "price": 48.45,
+      "shares": 300,
+      "reason": "评分40·新仓减半",
+      "profit_pct": -4.59,
+      "profit_amount": -698.63
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-07-16",
+      "price": 48.54,
+      "shares": 200,
+      "reason": "评分40·新仓减半",
+      "profit_pct": -4.43,
+      "profit_amount": -449.44
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-07-16",
+      "price": 48.52,
+      "shares": 100,
+      "reason": "评分40·新仓减半",
+      "profit_pct": -4.52,
+      "profit_amount": -229.22
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "加仓",
+      "date": "2026-07-16",
+      "price": 48.39,
+      "shares": 400,
+      "reason": "大跌低吸·跌3.9%·MA支撑-3%·RSI46",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出(部分)",
+      "date": "2026-07-16",
+      "price": 48.25,
+      "shares": 200,
+      "reason": "评分40·新仓减半",
+      "profit_pct": -1.41,
+      "profit_amount": -137.75
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出",
+      "date": "2026-07-16",
+      "price": 48.09,
+      "shares": 300,
+      "reason": "评分35·建议卖出",
+      "profit_pct": -1.72,
+      "profit_amount": -252.08
     }
   ],
   "daily_values": [
@@ -175,6 +226,10 @@
     {
       "date": "2026-07-15",
       "value": 495074.17
+    },
+    {
+      "date": "2026-07-16",
+      "value": 493561.28
     }
   ]
 }
