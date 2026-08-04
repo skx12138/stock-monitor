@@ -1,6 +1,6 @@
 {
-  "cash": 454231.2762239998,
-  "total_value": 493561.28,
+  "cash": 450995.2439139998,
+  "total_value": 493580.24,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -16,6 +16,21 @@
       "peak_price": 78.66,
       "add_count": 0,
       "hold_since": "2026-07-15"
+    },
+    "603928": {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "buy_date": "2026-08-04",
+      "buy_price": 10.77,
+      "shares": 300,
+      "current_price": 10.85,
+      "total_cost": 3236.03231,
+      "market_value": 3255.0,
+      "profit_pct": 0.74,
+      "profit_amount": 18.97,
+      "peak_price": 10.85,
+      "add_count": 0,
+      "hold_since": "2026-08-04"
     }
   },
   "trades": [
@@ -216,6 +231,17 @@
       "reason": "评分35·建议卖出",
       "profit_pct": -1.72,
       "profit_amount": -252.08
+    },
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "加仓",
+      "date": "2026-08-04",
+      "price": 10.77,
+      "shares": 300,
+      "reason": "评分66分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -258,6 +284,10 @@
     {
       "date": "2026-08-03",
       "value": 493561.28
+    },
+    {
+      "date": "2026-08-04",
+      "value": 493580.24
     }
   ]
 }
