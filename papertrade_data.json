@@ -1,6 +1,6 @@
 {
-  "cash": 394714.47081399977,
-  "total_value": 496706.47,
+  "cash": 455788.8470939998,
+  "total_value": 496368.85,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,20 +17,20 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "600580": {
-      "stock_code": "600580",
-      "stock_name": "卧龙电驱",
-      "buy_date": "2026-08-05",
-      "buy_price": 35.19,
-      "shares": 1700,
-      "current_price": 36.86,
-      "total_cost": 59844.15528,
-      "market_value": 62662.0,
-      "profit_pct": 4.75,
-      "profit_amount": 2817.84,
-      "peak_price": 38.41,
-      "add_count": 1,
-      "hold_since": "2026-08-05"
+    "603928": {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "buy_date": "2026-08-06",
+      "buy_price": 12.32,
+      "shares": 100,
+      "current_price": 12.5,
+      "total_cost": 1237.01232,
+      "market_value": 1250.0,
+      "profit_pct": 1.46,
+      "profit_amount": 12.99,
+      "peak_price": 12.61,
+      "add_count": 0,
+      "hold_since": "2026-08-06"
     }
   },
   "trades": [
@@ -297,6 +297,28 @@
       "reason": "评分28·建议卖出",
       "profit_pct": 10.12,
       "profit_amount": 109.12
+    },
+    {
+      "stock_code": "600580",
+      "stock_name": "卧龙电驱",
+      "action": "卖出",
+      "date": "2026-08-06",
+      "price": 36.7,
+      "shares": 1700,
+      "reason": "移动止盈(从高点回撤4.5%)",
+      "profit_pct": 4.12,
+      "profit_amount": 2467.23
+    },
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "加仓",
+      "date": "2026-08-06",
+      "price": 12.32,
+      "shares": 100,
+      "reason": "评分65分买入0%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -347,6 +369,10 @@
     {
       "date": "2026-08-05",
       "value": 496706.47
+    },
+    {
+      "date": "2026-08-06",
+      "value": 496368.85
     }
   ]
 }
