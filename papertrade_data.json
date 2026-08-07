@@ -1,6 +1,6 @@
 {
-  "cash": 455788.8470939998,
-  "total_value": 496368.85,
+  "cash": 391512.1495239998,
+  "total_value": 496977.15,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -23,14 +23,44 @@
       "buy_date": "2026-08-06",
       "buy_price": 12.32,
       "shares": 100,
-      "current_price": 12.5,
+      "current_price": 12.67,
       "total_cost": 1237.01232,
-      "market_value": 1250.0,
-      "profit_pct": 1.46,
-      "profit_amount": 12.99,
-      "peak_price": 12.61,
+      "market_value": 1267.0,
+      "profit_pct": 2.84,
+      "profit_amount": 29.99,
+      "peak_price": 12.67,
       "add_count": 0,
       "hold_since": "2026-08-06"
+    },
+    "000620": {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "buy_date": "2026-08-07",
+      "buy_price": 2.77,
+      "shares": 6200,
+      "current_price": 2.78,
+      "total_cost": 17179.17174,
+      "market_value": 17236.0,
+      "profit_pct": 0.36,
+      "profit_amount": 56.83,
+      "peak_price": 2.79,
+      "add_count": 0,
+      "hold_since": "2026-08-07"
+    },
+    "600580": {
+      "stock_code": "600580",
+      "stock_name": "卧龙电驱",
+      "buy_date": "2026-08-07",
+      "buy_price": 36.22,
+      "shares": 1300,
+      "current_price": 36.64,
+      "total_cost": 47097.525830000006,
+      "market_value": 47632.0,
+      "profit_pct": 1.16,
+      "profit_amount": 534.47,
+      "peak_price": 36.97,
+      "add_count": 1,
+      "hold_since": "2026-08-07"
     }
   },
   "trades": [
@@ -319,6 +349,39 @@
       "reason": "评分65分买入0%仓位·震荡·大盘稳",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-07",
+      "price": 2.77,
+      "shares": 6200,
+      "reason": "评分78分买入4%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600580",
+      "stock_name": "卧龙电驱",
+      "action": "加仓",
+      "date": "2026-08-07",
+      "price": 36.21,
+      "shares": 300,
+      "reason": "评分74分买入3%仓位·看涨·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600580",
+      "stock_name": "卧龙电驱",
+      "action": "加仓",
+      "date": "2026-08-07",
+      "price": 36.22,
+      "shares": 1000,
+      "reason": "MA趋势加仓·金叉否·评分74",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -373,6 +436,10 @@
     {
       "date": "2026-08-06",
       "value": 496368.85
+    },
+    {
+      "date": "2026-08-07",
+      "value": 496977.15
     }
   ]
 }
