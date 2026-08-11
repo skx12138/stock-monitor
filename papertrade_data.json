@@ -1,6 +1,6 @@
 {
-  "cash": 391512.1495239998,
-  "total_value": 496977.15,
+  "cash": 345254.3693739997,
+  "total_value": 496487.37,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,34 +17,19 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "603928": {
-      "stock_code": "603928",
-      "stock_name": "兴业股份",
-      "buy_date": "2026-08-06",
-      "buy_price": 12.32,
-      "shares": 100,
-      "current_price": 12.67,
-      "total_cost": 1237.01232,
-      "market_value": 1267.0,
-      "profit_pct": 2.84,
-      "profit_amount": 29.99,
-      "peak_price": 12.67,
-      "add_count": 0,
-      "hold_since": "2026-08-06"
-    },
     "000620": {
       "stock_code": "000620",
       "stock_name": "新华联",
       "buy_date": "2026-08-07",
-      "buy_price": 2.77,
-      "shares": 6200,
+      "buy_price": 2.8,
+      "shares": 22100,
       "current_price": 2.78,
-      "total_cost": 17179.17174,
-      "market_value": 17236.0,
-      "profit_pct": 0.36,
-      "profit_amount": 56.83,
-      "peak_price": 2.79,
-      "add_count": 0,
+      "total_cost": 61873.61853,
+      "market_value": 61437.99999999999,
+      "profit_pct": -0.71,
+      "profit_amount": -435.62,
+      "peak_price": 2.83,
+      "add_count": 3,
       "hold_since": "2026-08-07"
     },
     "600580": {
@@ -53,14 +38,29 @@
       "buy_date": "2026-08-07",
       "buy_price": 36.22,
       "shares": 1300,
-      "current_price": 36.64,
+      "current_price": 36.65,
       "total_cost": 47097.525830000006,
-      "market_value": 47632.0,
-      "profit_pct": 1.16,
-      "profit_amount": 534.47,
-      "peak_price": 36.97,
+      "market_value": 47645.0,
+      "profit_pct": 1.19,
+      "profit_amount": 547.47,
+      "peak_price": 37.29,
       "add_count": 1,
       "hold_since": "2026-08-07"
+    },
+    "002515": {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "buy_date": "2026-08-11",
+      "buy_price": 7.11,
+      "shares": 400,
+      "current_price": 7.05,
+      "total_cost": 2849.02844,
+      "market_value": 2820.0,
+      "profit_pct": -0.84,
+      "profit_amount": -29.03,
+      "peak_price": 7.21,
+      "add_count": 0,
+      "hold_since": "2026-08-11"
     }
   },
   "trades": [
@@ -382,6 +382,61 @@
       "reason": "MA趋势加仓·金叉否·评分74",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "加仓",
+      "date": "2026-08-11",
+      "price": 7.11,
+      "shares": 400,
+      "reason": "评分65分买入1%仓位·看涨·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-11",
+      "price": 2.81,
+      "shares": 5500,
+      "reason": "回踩MA10加仓·评分69",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-11",
+      "price": 2.81,
+      "shares": 5300,
+      "reason": "回踩MA10加仓·评分69",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-11",
+      "price": 2.81,
+      "shares": 5100,
+      "reason": "回踩MA10加仓·评分69",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "卖出",
+      "date": "2026-08-11",
+      "price": 12.92,
+      "shares": 100,
+      "reason": "尾盘止盈4.8%",
+      "profit_pct": 3.94,
+      "profit_amount": 48.68
     }
   ],
   "daily_values": [
@@ -440,6 +495,10 @@
     {
       "date": "2026-08-07",
       "value": 496977.15
+    },
+    {
+      "date": "2026-08-11",
+      "value": 496487.37
     }
   ]
 }
