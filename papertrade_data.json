@@ -1,6 +1,6 @@
 {
-  "cash": 345254.3693739997,
-  "total_value": 496487.37,
+  "cash": 306687.77240399976,
+  "total_value": 495930.77,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,32 +17,17 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "000620": {
-      "stock_code": "000620",
-      "stock_name": "新华联",
-      "buy_date": "2026-08-07",
-      "buy_price": 2.8,
-      "shares": 22100,
-      "current_price": 2.78,
-      "total_cost": 61873.61853,
-      "market_value": 61437.99999999999,
-      "profit_pct": -0.71,
-      "profit_amount": -435.62,
-      "peak_price": 2.83,
-      "add_count": 3,
-      "hold_since": "2026-08-07"
-    },
     "600580": {
       "stock_code": "600580",
       "stock_name": "卧龙电驱",
       "buy_date": "2026-08-07",
       "buy_price": 36.22,
       "shares": 1300,
-      "current_price": 36.65,
+      "current_price": 35.86,
       "total_cost": 47097.525830000006,
-      "market_value": 47645.0,
-      "profit_pct": 1.19,
-      "profit_amount": 547.47,
+      "market_value": 46618.0,
+      "profit_pct": -0.99,
+      "profit_amount": -479.53,
       "peak_price": 37.29,
       "add_count": 1,
       "hold_since": "2026-08-07"
@@ -53,14 +38,44 @@
       "buy_date": "2026-08-11",
       "buy_price": 7.11,
       "shares": 400,
-      "current_price": 7.05,
+      "current_price": 7.25,
       "total_cost": 2849.02844,
-      "market_value": 2820.0,
-      "profit_pct": -0.84,
-      "profit_amount": -29.03,
-      "peak_price": 7.21,
+      "market_value": 2900.0,
+      "profit_pct": 1.97,
+      "profit_amount": 50.97,
+      "peak_price": 7.28,
       "add_count": 0,
       "hold_since": "2026-08-11"
+    },
+    "603928": {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "buy_date": "2026-08-12",
+      "buy_price": 13.39,
+      "shares": 4800,
+      "current_price": 13.31,
+      "total_cost": 64301.70632,
+      "market_value": 63888.0,
+      "profit_pct": -0.6,
+      "profit_amount": -413.71,
+      "peak_price": 13.42,
+      "add_count": 2,
+      "hold_since": "2026-08-12"
+    },
+    "000620": {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "buy_date": "2026-08-12",
+      "buy_price": 2.83,
+      "shares": 12900,
+      "current_price": 2.83,
+      "total_cost": 36508.364929999996,
+      "market_value": 36507.0,
+      "profit_pct": 0.0,
+      "profit_amount": -1.36,
+      "peak_price": 2.83,
+      "add_count": 2,
+      "hold_since": "2026-08-12"
     }
   },
   "trades": [
@@ -437,6 +452,83 @@
       "reason": "尾盘止盈4.8%",
       "profit_pct": 3.94,
       "profit_amount": 48.68
+    },
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "加仓",
+      "date": "2026-08-12",
+      "price": 13.38,
+      "shares": 600,
+      "reason": "评分81分买入2%仓位·看涨·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "加仓",
+      "date": "2026-08-12",
+      "price": 13.37,
+      "shares": 2200,
+      "reason": "MA趋势加仓·金叉是·评分81",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "加仓",
+      "date": "2026-08-12",
+      "price": 13.42,
+      "shares": 2000,
+      "reason": "MA趋势加仓·金叉是·评分81",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出",
+      "date": "2026-08-12",
+      "price": 2.82,
+      "shares": 22100,
+      "reason": "持仓5天未涨 保本出",
+      "profit_pct": 0.6,
+      "profit_amount": 369.86
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-12",
+      "price": 2.82,
+      "shares": 1400,
+      "reason": "评分65分买入1%仓位·看涨·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-12",
+      "price": 2.83,
+      "shares": 5900,
+      "reason": "MA趋势加仓·金叉是·评分65",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-12",
+      "price": 2.83,
+      "shares": 5600,
+      "reason": "MA趋势加仓·金叉是·评分65",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -499,6 +591,10 @@
     {
       "date": "2026-08-11",
       "value": 496487.37
+    },
+    {
+      "date": "2026-08-12",
+      "value": 495930.77
     }
   ]
 }
