@@ -1,6 +1,6 @@
 {
-  "cash": 306687.77240399976,
-  "total_value": 495930.77,
+  "cash": 334240.13152399973,
+  "total_value": 492246.13,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,33 +17,18 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "600580": {
-      "stock_code": "600580",
-      "stock_name": "卧龙电驱",
-      "buy_date": "2026-08-07",
-      "buy_price": 36.22,
-      "shares": 1300,
-      "current_price": 35.86,
-      "total_cost": 47097.525830000006,
-      "market_value": 46618.0,
-      "profit_pct": -0.99,
-      "profit_amount": -479.53,
-      "peak_price": 37.29,
-      "add_count": 1,
-      "hold_since": "2026-08-07"
-    },
     "002515": {
       "stock_code": "002515",
       "stock_name": "金字火腿",
       "buy_date": "2026-08-11",
       "buy_price": 7.11,
       "shares": 400,
-      "current_price": 7.25,
+      "current_price": 7.02,
       "total_cost": 2849.02844,
-      "market_value": 2900.0,
-      "profit_pct": 1.97,
-      "profit_amount": 50.97,
-      "peak_price": 7.28,
+      "market_value": 2808.0,
+      "profit_pct": -1.27,
+      "profit_amount": -41.03,
+      "peak_price": 7.29,
       "add_count": 0,
       "hold_since": "2026-08-11"
     },
@@ -53,11 +38,11 @@
       "buy_date": "2026-08-12",
       "buy_price": 13.39,
       "shares": 4800,
-      "current_price": 13.31,
+      "current_price": 13.02,
       "total_cost": 64301.70632,
-      "market_value": 63888.0,
-      "profit_pct": -0.6,
-      "profit_amount": -413.71,
+      "market_value": 62496.0,
+      "profit_pct": -2.76,
+      "profit_amount": -1805.71,
       "peak_price": 13.42,
       "add_count": 2,
       "hold_since": "2026-08-12"
@@ -66,16 +51,31 @@
       "stock_code": "000620",
       "stock_name": "新华联",
       "buy_date": "2026-08-12",
-      "buy_price": 2.83,
-      "shares": 12900,
-      "current_price": 2.83,
-      "total_cost": 36508.364929999996,
-      "market_value": 36507.0,
-      "profit_pct": 0.0,
-      "profit_amount": -1.36,
+      "buy_price": 2.82,
+      "shares": 18300,
+      "current_price": 2.76,
+      "total_cost": 51633.516129999996,
+      "market_value": 50507.99999999999,
+      "profit_pct": -2.13,
+      "profit_amount": -1125.52,
       "peak_price": 2.83,
-      "add_count": 2,
+      "add_count": 3,
       "hold_since": "2026-08-12"
+    },
+    "002549": {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "buy_date": "2026-08-13",
+      "buy_price": 14.32,
+      "shares": 200,
+      "current_price": 14.32,
+      "total_cost": 2869.02864,
+      "market_value": 2864.0,
+      "profit_pct": 0.0,
+      "profit_amount": -5.03,
+      "peak_price": 14.32,
+      "add_count": 0,
+      "hold_since": "2026-08-13"
     }
   },
   "trades": [
@@ -529,6 +529,39 @@
       "reason": "MA趋势加仓·金叉是·评分65",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-13",
+      "price": 2.8,
+      "shares": 5400,
+      "reason": "MA趋势加仓·金叉是·评分65",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600580",
+      "stock_name": "卧龙电驱",
+      "action": "卖出",
+      "date": "2026-08-13",
+      "price": 35.08,
+      "shares": 1300,
+      "reason": "评分43·建议卖出",
+      "profit_pct": -3.29,
+      "profit_amount": -1550.99
+    },
+    {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "action": "加仓",
+      "date": "2026-08-13",
+      "price": 14.32,
+      "shares": 200,
+      "reason": "评分74分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -595,6 +628,10 @@
     {
       "date": "2026-08-12",
       "value": 495930.77
+    },
+    {
+      "date": "2026-08-13",
+      "value": 492246.13
     }
   ]
 }
