@@ -1,6 +1,6 @@
 {
-  "cash": 334240.13152399973,
-  "total_value": 492246.13,
+  "cash": 12919.52213399965,
+  "total_value": 499028.52,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,65 +17,50 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "002515": {
-      "stock_code": "002515",
-      "stock_name": "金字火腿",
-      "buy_date": "2026-08-11",
-      "buy_price": 7.11,
-      "shares": 400,
-      "current_price": 7.02,
-      "total_cost": 2849.02844,
-      "market_value": 2808.0,
-      "profit_pct": -1.27,
-      "profit_amount": -41.03,
-      "peak_price": 7.29,
-      "add_count": 0,
-      "hold_since": "2026-08-11"
-    },
-    "603928": {
-      "stock_code": "603928",
-      "stock_name": "兴业股份",
-      "buy_date": "2026-08-12",
-      "buy_price": 13.39,
-      "shares": 4800,
-      "current_price": 13.02,
-      "total_cost": 64301.70632,
-      "market_value": 62496.0,
-      "profit_pct": -2.76,
-      "profit_amount": -1805.71,
-      "peak_price": 13.42,
-      "add_count": 2,
-      "hold_since": "2026-08-12"
-    },
-    "000620": {
-      "stock_code": "000620",
-      "stock_name": "新华联",
-      "buy_date": "2026-08-12",
-      "buy_price": 2.82,
-      "shares": 18300,
-      "current_price": 2.76,
-      "total_cost": 51633.516129999996,
-      "market_value": 50507.99999999999,
-      "profit_pct": -2.13,
-      "profit_amount": -1125.52,
-      "peak_price": 2.83,
-      "add_count": 3,
-      "hold_since": "2026-08-12"
-    },
     "002549": {
       "stock_code": "002549",
       "stock_name": "凯美特气",
       "buy_date": "2026-08-13",
-      "buy_price": 14.32,
-      "shares": 200,
-      "current_price": 14.32,
-      "total_cost": 2869.02864,
-      "market_value": 2864.0,
-      "profit_pct": 0.0,
-      "profit_amount": -5.03,
-      "peak_price": 14.32,
-      "add_count": 0,
+      "buy_price": 14.42,
+      "shares": 2300,
+      "current_price": 14.57,
+      "total_cost": 33166.33146,
+      "market_value": 33511.0,
+      "profit_pct": 1.04,
+      "profit_amount": 344.67,
+      "peak_price": 14.57,
+      "add_count": 3,
       "hold_since": "2026-08-13"
+    },
+    "002407": {
+      "stock_code": "002407",
+      "stock_name": "多氟多",
+      "buy_date": "2026-08-17",
+      "buy_price": 39.16,
+      "shares": 8100,
+      "current_price": 39.18,
+      "total_cost": 317278.47096,
+      "market_value": 317358.0,
+      "profit_pct": 0.05,
+      "profit_amount": 79.53,
+      "peak_price": 39.18,
+      "add_count": 0,
+      "hold_since": "2026-08-17"
+    },
+    "600498": {
+      "stock_code": "600498",
+      "stock_name": "烽火通信",
+      "buy_date": "2026-08-17",
+      "buy_price": 41.63,
+      "shares": 2300,
+      "current_price": 41.7,
+      "total_cost": 95773.89474,
+      "market_value": 95910.0,
+      "profit_pct": 0.17,
+      "profit_amount": 136.11,
+      "peak_price": 41.7,
+      "add_count": 0,
+      "hold_since": "2026-08-17"
     }
   },
   "trades": [
@@ -562,6 +547,248 @@
       "reason": "评分74分买入1%仓位·震荡·大盘稳",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 13.17,
+      "shares": 500,
+      "reason": "MA趋势加仓·金叉否·评分76",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 3.02,
+      "shares": 9100,
+      "reason": "止盈7.1%卖9100股",
+      "profit_pct": 6.9,
+      "profit_amount": 1771.69
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 7.77,
+      "shares": 200,
+      "reason": "止盈9.3%卖200股",
+      "profit_pct": 8.63,
+      "profit_amount": 122.92
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 3.02,
+      "shares": 4600,
+      "reason": "止盈7.1%卖4600股",
+      "profit_pct": 6.89,
+      "profit_amount": 894.05
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 7.74,
+      "shares": 100,
+      "reason": "止盈8.9%卖100股",
+      "profit_pct": 7.86,
+      "profit_amount": 55.96
+    },
+    {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 14.41,
+      "shares": 700,
+      "reason": "回踩MA10加仓·评分74",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 3.02,
+      "shares": 2300,
+      "reason": "止盈7.1%卖2300股",
+      "profit_pct": 6.85,
+      "profit_amount": 444.53
+    },
+    {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 14.43,
+      "shares": 700,
+      "reason": "回踩MA10加仓·评分74",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 3.02,
+      "shares": 1100,
+      "reason": "止盈7.1%卖1100股",
+      "profit_pct": 6.77,
+      "profit_amount": 209.99
+    },
+    {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 14.42,
+      "shares": 700,
+      "reason": "回踩MA10加仓·评分74",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 3.02,
+      "shares": 600,
+      "reason": "止盈7.1%卖600股",
+      "profit_pct": 6.63,
+      "profit_amount": 112.27
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 3.02,
+      "shares": 300,
+      "reason": "止盈7.1%卖300股",
+      "profit_pct": 6.34,
+      "profit_amount": 53.63
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 3.05,
+      "shares": 100,
+      "reason": "止盈8.2%卖100股",
+      "profit_pct": 6.22,
+      "profit_amount": 17.54
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出(部分)",
+      "date": "2026-08-17",
+      "price": 3.1,
+      "shares": 100,
+      "reason": "止盈9.9%卖100股",
+      "profit_pct": 7.99,
+      "profit_amount": 22.54
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 7.85,
+      "shares": 2100,
+      "reason": "第1次加仓·评分66",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 7.88,
+      "shares": 2100,
+      "reason": "放量突破加仓·评分66",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 7.89,
+      "shares": 2000,
+      "reason": "放量突破加仓·评分66",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "卖出",
+      "date": "2026-08-17",
+      "price": 7.9,
+      "shares": 6300,
+      "reason": "持仓6天未涨 保本出",
+      "profit_pct": 0.34,
+      "profit_amount": 166.54
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出",
+      "date": "2026-08-17",
+      "price": 3.1,
+      "shares": 100,
+      "reason": "尾盘止盈10.6%",
+      "profit_pct": 7.99,
+      "profit_amount": 22.54
+    },
+    {
+      "stock_code": "002407",
+      "stock_name": "多氟多",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 39.16,
+      "shares": 8100,
+      "reason": "评分66分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "603928",
+      "stock_name": "兴业股份",
+      "action": "卖出",
+      "date": "2026-08-17",
+      "price": 13.27,
+      "shares": 5300,
+      "reason": "减仓降仓·评分78·仓位92%",
+      "profit_pct": -0.92,
+      "profit_amount": -649.39
+    },
+    {
+      "stock_code": "600498",
+      "stock_name": "烽火通信",
+      "action": "加仓",
+      "date": "2026-08-17",
+      "price": 41.63,
+      "shares": 2300,
+      "reason": "评分67分买入1%仓位·看涨·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -632,6 +859,10 @@
     {
       "date": "2026-08-13",
       "value": 492246.13
+    },
+    {
+      "date": "2026-08-17",
+      "value": 499028.52
     }
   ]
 }
