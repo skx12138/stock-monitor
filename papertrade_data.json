@@ -1,6 +1,6 @@
 {
-  "cash": 12919.52213399965,
-  "total_value": 499028.52,
+  "cash": 401735.85454299964,
+  "total_value": 464881.05,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,50 +17,65 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "002549": {
-      "stock_code": "002549",
-      "stock_name": "凯美特气",
-      "buy_date": "2026-08-13",
-      "buy_price": 14.42,
-      "shares": 2300,
-      "current_price": 14.57,
-      "total_cost": 33166.33146,
-      "market_value": 33511.0,
-      "profit_pct": 1.04,
-      "profit_amount": 344.67,
-      "peak_price": 14.57,
-      "add_count": 3,
-      "hold_since": "2026-08-13"
-    },
-    "002407": {
-      "stock_code": "002407",
-      "stock_name": "多氟多",
-      "buy_date": "2026-08-17",
-      "buy_price": 39.16,
-      "shares": 8100,
-      "current_price": 39.18,
-      "total_cost": 317278.47096,
-      "market_value": 317358.0,
-      "profit_pct": 0.05,
-      "profit_amount": 79.53,
-      "peak_price": 39.18,
+    "000811": {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "buy_date": "2026-08-20",
+      "buy_price": 39.9,
+      "shares": 200,
+      "current_price": 39.25,
+      "total_cost": 7985.0798,
+      "market_value": 7850.0,
+      "profit_pct": -1.63,
+      "profit_amount": -135.08,
+      "peak_price": 40.38,
       "add_count": 0,
-      "hold_since": "2026-08-17"
+      "hold_since": "2026-08-20"
     },
-    "600498": {
-      "stock_code": "600498",
-      "stock_name": "烽火通信",
-      "buy_date": "2026-08-17",
-      "buy_price": 41.63,
-      "shares": 2300,
-      "current_price": 41.7,
-      "total_cost": 95773.89474,
-      "market_value": 95910.0,
-      "profit_pct": 0.17,
-      "profit_amount": 136.11,
-      "peak_price": 41.7,
+    "002559": {
+      "stock_code": "002559",
+      "stock_name": "亚威股份",
+      "buy_date": "2026-08-20",
+      "buy_price": 9.52,
+      "shares": 900,
+      "current_price": 9.45,
+      "total_cost": 8573.08568,
+      "market_value": 8505.0,
+      "profit_pct": -0.74,
+      "profit_amount": -68.09,
+      "peak_price": 9.59,
       "add_count": 0,
-      "hold_since": "2026-08-17"
+      "hold_since": "2026-08-20"
+    },
+    "002747": {
+      "stock_code": "002747",
+      "stock_name": "埃斯顿",
+      "buy_date": "2026-08-20",
+      "buy_price": 33.83,
+      "shares": 100,
+      "current_price": 32.77,
+      "total_cost": 3388.03383,
+      "market_value": 3277.0000000000005,
+      "profit_pct": -3.13,
+      "profit_amount": -111.03,
+      "peak_price": 34.33,
+      "add_count": 0,
+      "hold_since": "2026-08-20"
+    },
+    "515880": {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "buy_date": "2026-08-20",
+      "buy_price": 0.657,
+      "shares": 6300,
+      "current_price": 0.664,
+      "total_cost": 4139.555301,
+      "market_value": 4183.2,
+      "profit_pct": 1.07,
+      "profit_amount": 43.64,
+      "peak_price": 0.664,
+      "add_count": 0,
+      "hold_since": "2026-08-20"
     }
   },
   "trades": [
@@ -789,6 +804,83 @@
       "reason": "评分67分买入1%仓位·看涨·大盘稳",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002407",
+      "stock_name": "多氟多",
+      "action": "卖出",
+      "date": "2026-08-20",
+      "price": 36.3,
+      "shares": 8100,
+      "reason": "减仓降仓·评分42·仓位97%",
+      "profit_pct": -7.44,
+      "profit_amount": -23618.95
+    },
+    {
+      "stock_code": "600498",
+      "stock_name": "烽火通信",
+      "action": "卖出",
+      "date": "2026-08-20",
+      "price": 38.38,
+      "shares": 2300,
+      "reason": "ATR止损-7.8%(ATR=2.35)",
+      "profit_pct": -7.95,
+      "profit_amount": -7611.12
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "加仓",
+      "date": "2026-08-20",
+      "price": 39.9,
+      "shares": 200,
+      "reason": "评分78分买入3%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002559",
+      "stock_name": "亚威股份",
+      "action": "加仓",
+      "date": "2026-08-20",
+      "price": 9.52,
+      "shares": 900,
+      "reason": "评分68分买入2%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002747",
+      "stock_name": "埃斯顿",
+      "action": "加仓",
+      "date": "2026-08-20",
+      "price": 33.83,
+      "shares": 100,
+      "reason": "评分68分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "action": "卖出",
+      "date": "2026-08-20",
+      "price": 13.53,
+      "shares": 2300,
+      "reason": "ATR止损-6.2%(ATR=0.49)",
+      "profit_pct": -6.29,
+      "profit_amount": -2086.54
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "加仓",
+      "date": "2026-08-20",
+      "price": 0.66,
+      "shares": 6300,
+      "reason": "评分77分买入1%仓位·看涨·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -863,6 +955,10 @@
     {
       "date": "2026-08-17",
       "value": 499028.52
+    },
+    {
+      "date": "2026-08-20",
+      "value": 464881.05
     }
   ]
 }
