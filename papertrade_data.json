@@ -1,6 +1,6 @@
 {
-  "cash": 401735.85454299964,
-  "total_value": 464881.05,
+  "cash": 55355.39473299963,
+  "total_value": 459965.39,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,65 +17,20 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "000811": {
-      "stock_code": "000811",
-      "stock_name": "冰轮环境",
-      "buy_date": "2026-08-20",
-      "buy_price": 39.9,
-      "shares": 200,
-      "current_price": 39.25,
-      "total_cost": 7985.0798,
-      "market_value": 7850.0,
-      "profit_pct": -1.63,
-      "profit_amount": -135.08,
-      "peak_price": 40.38,
+    "600105": {
+      "stock_code": "600105",
+      "stock_name": "永鼎股份",
+      "buy_date": "2026-08-24",
+      "buy_price": 38.53,
+      "shares": 9600,
+      "current_price": 38.05,
+      "total_cost": 369984.17088,
+      "market_value": 365280.0,
+      "profit_pct": -1.25,
+      "profit_amount": -4704.17,
+      "peak_price": 38.53,
       "add_count": 0,
-      "hold_since": "2026-08-20"
-    },
-    "002559": {
-      "stock_code": "002559",
-      "stock_name": "亚威股份",
-      "buy_date": "2026-08-20",
-      "buy_price": 9.52,
-      "shares": 900,
-      "current_price": 9.45,
-      "total_cost": 8573.08568,
-      "market_value": 8505.0,
-      "profit_pct": -0.74,
-      "profit_amount": -68.09,
-      "peak_price": 9.59,
-      "add_count": 0,
-      "hold_since": "2026-08-20"
-    },
-    "002747": {
-      "stock_code": "002747",
-      "stock_name": "埃斯顿",
-      "buy_date": "2026-08-20",
-      "buy_price": 33.83,
-      "shares": 100,
-      "current_price": 32.77,
-      "total_cost": 3388.03383,
-      "market_value": 3277.0000000000005,
-      "profit_pct": -3.13,
-      "profit_amount": -111.03,
-      "peak_price": 34.33,
-      "add_count": 0,
-      "hold_since": "2026-08-20"
-    },
-    "515880": {
-      "stock_code": "515880",
-      "stock_name": "通信ETF国泰",
-      "buy_date": "2026-08-20",
-      "buy_price": 0.657,
-      "shares": 6300,
-      "current_price": 0.664,
-      "total_cost": 4139.555301,
-      "market_value": 4183.2,
-      "profit_pct": 1.07,
-      "profit_amount": 43.64,
-      "peak_price": 0.664,
-      "add_count": 0,
-      "hold_since": "2026-08-20"
+      "hold_since": "2026-08-24"
     }
   },
   "trades": [
@@ -881,6 +836,61 @@
       "reason": "评分77分买入1%仓位·看涨·大盘稳",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "002559",
+      "stock_name": "亚威股份",
+      "action": "卖出",
+      "date": "2026-08-24",
+      "price": 9.2,
+      "shares": 900,
+      "reason": "评分36·建议卖出",
+      "profit_pct": -3.57,
+      "profit_amount": -306.45
+    },
+    {
+      "stock_code": "002747",
+      "stock_name": "埃斯顿",
+      "action": "卖出",
+      "date": "2026-08-24",
+      "price": 30.64,
+      "shares": 100,
+      "reason": "评分42·建议卖出",
+      "profit_pct": -9.8,
+      "profit_amount": -332.13
+    },
+    {
+      "stock_code": "600105",
+      "stock_name": "永鼎股份",
+      "action": "加仓",
+      "date": "2026-08-24",
+      "price": 38.53,
+      "shares": 9600,
+      "reason": "评分66分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000811",
+      "stock_name": "冰轮环境",
+      "action": "卖出",
+      "date": "2026-08-24",
+      "price": 41.02,
+      "shares": 200,
+      "reason": "减仓降仓·评分63·仓位91%",
+      "profit_pct": 2.58,
+      "profit_amount": 205.63
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "卖出",
+      "date": "2026-08-24",
+      "price": 0.65,
+      "shares": 6300,
+      "reason": "减仓降仓·评分74·仓位89%",
+      "profit_pct": -1.19,
+      "profit_amount": -49.1
     }
   ],
   "daily_values": [
@@ -959,6 +969,10 @@
     {
       "date": "2026-08-20",
       "value": 464881.05
+    },
+    {
+      "date": "2026-08-24",
+      "value": 459965.39
     }
   ]
 }
