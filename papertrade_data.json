@@ -1,6 +1,6 @@
 {
-  "cash": 55355.39473299963,
-  "total_value": 459965.39,
+  "cash": 45878.50920599961,
+  "total_value": 473106.71,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,20 +17,65 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "600105": {
-      "stock_code": "600105",
-      "stock_name": "永鼎股份",
-      "buy_date": "2026-08-24",
-      "buy_price": 38.53,
-      "shares": 9600,
-      "current_price": 38.05,
-      "total_cost": 369984.17088,
-      "market_value": 365280.0,
-      "profit_pct": -1.25,
-      "profit_amount": -4704.17,
-      "peak_price": 38.53,
+    "600707": {
+      "stock_code": "600707",
+      "stock_name": "彩虹股份",
+      "buy_date": "2026-08-25",
+      "buy_price": 9.06,
+      "shares": 1300,
+      "current_price": 9.27,
+      "total_cost": 11783.11778,
+      "market_value": 12051.0,
+      "profit_pct": 2.32,
+      "profit_amount": 267.88,
+      "peak_price": 9.31,
       "add_count": 0,
-      "hold_since": "2026-08-24"
+      "hold_since": "2026-08-25"
+    },
+    "000620": {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "buy_date": "2026-08-25",
+      "buy_price": 3.44,
+      "shares": 900,
+      "current_price": 3.48,
+      "total_cost": 3101.03096,
+      "market_value": 3132.0,
+      "profit_pct": 1.16,
+      "profit_amount": 30.97,
+      "peak_price": 3.59,
+      "add_count": 0,
+      "hold_since": "2026-08-25"
+    },
+    "515880": {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "buy_date": "2026-08-25",
+      "buy_price": 0.643,
+      "shares": 17900,
+      "current_price": 0.648,
+      "total_cost": 11510.966067000001,
+      "market_value": 11599.2,
+      "profit_pct": 0.78,
+      "profit_amount": 88.23,
+      "peak_price": 0.66,
+      "add_count": 0,
+      "hold_since": "2026-08-25"
+    },
+    "600183": {
+      "stock_code": "600183",
+      "stock_name": "生益科技",
+      "buy_date": "2026-08-25",
+      "buy_price": 126.82,
+      "shares": 2800,
+      "current_price": 128.97,
+      "total_cost": 355188.32496,
+      "market_value": 361116.0,
+      "profit_pct": 1.7,
+      "profit_amount": 5927.68,
+      "peak_price": 131.95,
+      "add_count": 0,
+      "hold_since": "2026-08-25"
     }
   },
   "trades": [
@@ -891,6 +936,61 @@
       "reason": "减仓降仓·评分74·仓位89%",
       "profit_pct": -1.19,
       "profit_amount": -49.1
+    },
+    {
+      "stock_code": "600105",
+      "stock_name": "永鼎股份",
+      "action": "卖出",
+      "date": "2026-08-25",
+      "price": 38.81,
+      "shares": 9600,
+      "reason": "减仓降仓·评分57·仓位88%",
+      "profit_pct": 0.57,
+      "profit_amount": 2122.38
+    },
+    {
+      "stock_code": "600707",
+      "stock_name": "彩虹股份",
+      "action": "加仓",
+      "date": "2026-08-25",
+      "price": 9.06,
+      "shares": 1300,
+      "reason": "评分70分买入3%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "加仓",
+      "date": "2026-08-25",
+      "price": 3.44,
+      "shares": 900,
+      "reason": "评分68分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "加仓",
+      "date": "2026-08-25",
+      "price": 0.64,
+      "shares": 17900,
+      "reason": "评分71分买入3%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600183",
+      "stock_name": "生益科技",
+      "action": "加仓",
+      "date": "2026-08-25",
+      "price": 126.82,
+      "shares": 2800,
+      "reason": "评分65分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -973,6 +1073,10 @@
     {
       "date": "2026-08-24",
       "value": 459965.39
+    },
+    {
+      "date": "2026-08-25",
+      "value": 473106.71
     }
   ]
 }
