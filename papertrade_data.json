@@ -1,6 +1,6 @@
 {
-  "cash": 45878.50920599961,
-  "total_value": 473106.71,
+  "cash": 412466.5916499996,
+  "total_value": 474002.59,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -22,60 +22,45 @@
       "stock_name": "彩虹股份",
       "buy_date": "2026-08-25",
       "buy_price": 9.06,
-      "shares": 1300,
-      "current_price": 9.27,
-      "total_cost": 11783.11778,
-      "market_value": 12051.0,
-      "profit_pct": 2.32,
-      "profit_amount": 267.88,
+      "shares": 100,
+      "current_price": 9.16,
+      "total_cost": 906.3936753846153,
+      "market_value": 916.0,
+      "profit_pct": 1.1,
+      "profit_amount": 9.61,
       "peak_price": 9.31,
       "add_count": 0,
       "hold_since": "2026-08-25"
     },
-    "000620": {
-      "stock_code": "000620",
-      "stock_name": "新华联",
-      "buy_date": "2026-08-25",
-      "buy_price": 3.44,
-      "shares": 900,
-      "current_price": 3.48,
-      "total_cost": 3101.03096,
-      "market_value": 3132.0,
-      "profit_pct": 1.16,
-      "profit_amount": 30.97,
-      "peak_price": 3.59,
+    "002515": {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "buy_date": "2026-08-26",
+      "buy_price": 7.88,
+      "shares": 2200,
+      "current_price": 7.82,
+      "total_cost": 17341.17336,
+      "market_value": 17204.0,
+      "profit_pct": -0.76,
+      "profit_amount": -137.17,
+      "peak_price": 7.95,
       "add_count": 0,
-      "hold_since": "2026-08-25"
+      "hold_since": "2026-08-26"
     },
-    "515880": {
-      "stock_code": "515880",
-      "stock_name": "通信ETF国泰",
-      "buy_date": "2026-08-25",
-      "buy_price": 0.643,
-      "shares": 17900,
-      "current_price": 0.648,
-      "total_cost": 11510.966067000001,
-      "market_value": 11599.2,
-      "profit_pct": 0.78,
-      "profit_amount": 88.23,
-      "peak_price": 0.66,
+    "002549": {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "buy_date": "2026-08-26",
+      "buy_price": 13.75,
+      "shares": 300,
+      "current_price": 13.62,
+      "total_cost": 4130.04125,
+      "market_value": 4085.9999999999995,
+      "profit_pct": -0.95,
+      "profit_amount": -44.04,
+      "peak_price": 14.0,
       "add_count": 0,
-      "hold_since": "2026-08-25"
-    },
-    "600183": {
-      "stock_code": "600183",
-      "stock_name": "生益科技",
-      "buy_date": "2026-08-25",
-      "buy_price": 126.82,
-      "shares": 2800,
-      "current_price": 128.97,
-      "total_cost": 355188.32496,
-      "market_value": 361116.0,
-      "profit_pct": 1.7,
-      "profit_amount": 5927.68,
-      "peak_price": 131.95,
-      "add_count": 0,
-      "hold_since": "2026-08-25"
+      "hold_since": "2026-08-26"
     }
   },
   "trades": [
@@ -991,6 +976,105 @@
       "reason": "评分65分买入1%仓位·震荡·大盘稳",
       "profit_pct": 0.0,
       "profit_amount": 0.0
+    },
+    {
+      "stock_code": "000620",
+      "stock_name": "新华联",
+      "action": "卖出",
+      "date": "2026-08-26",
+      "price": 3.4,
+      "shares": 900,
+      "reason": "减仓降仓·评分58·仓位90%",
+      "profit_pct": -1.58,
+      "profit_amount": -49.12
+    },
+    {
+      "stock_code": "515880",
+      "stock_name": "通信ETF国泰",
+      "action": "卖出",
+      "date": "2026-08-26",
+      "price": 0.65,
+      "shares": 17900,
+      "reason": "减仓降仓·评分53·仓位90%",
+      "profit_pct": 1.59,
+      "profit_amount": 182.64
+    },
+    {
+      "stock_code": "600183",
+      "stock_name": "生益科技",
+      "action": "卖出",
+      "date": "2026-08-26",
+      "price": 129.54,
+      "shares": 2800,
+      "reason": "减仓降仓·评分47·仓位87%",
+      "profit_pct": 1.99,
+      "profit_amount": 7066.66
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "加仓",
+      "date": "2026-08-26",
+      "price": 7.88,
+      "shares": 2200,
+      "reason": "评分89分买入4%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600707",
+      "stock_name": "彩虹股份",
+      "action": "卖出(部分)",
+      "date": "2026-08-26",
+      "price": 9.24,
+      "shares": 600,
+      "reason": "评分44·新仓减半",
+      "profit_pct": 1.75,
+      "profit_amount": 95.04
+    },
+    {
+      "stock_code": "600707",
+      "stock_name": "彩虹股份",
+      "action": "卖出(部分)",
+      "date": "2026-08-26",
+      "price": 9.24,
+      "shares": 300,
+      "reason": "评分44·新仓减半",
+      "profit_pct": 1.66,
+      "profit_amount": 45.02
+    },
+    {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "action": "加仓",
+      "date": "2026-08-26",
+      "price": 13.75,
+      "shares": 300,
+      "reason": "评分66分买入1%仓位·震荡·大盘稳",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600707",
+      "stock_name": "彩虹股份",
+      "action": "卖出(部分)",
+      "date": "2026-08-26",
+      "price": 9.25,
+      "shares": 200,
+      "reason": "评分44·新仓减半",
+      "profit_pct": 1.67,
+      "profit_amount": 30.34
+    },
+    {
+      "stock_code": "600707",
+      "stock_name": "彩虹股份",
+      "action": "卖出(部分)",
+      "date": "2026-08-26",
+      "price": 9.24,
+      "shares": 100,
+      "reason": "评分44·新仓减半",
+      "profit_pct": 1.29,
+      "profit_amount": 11.67
     }
   ],
   "daily_values": [
@@ -1077,6 +1161,10 @@
     {
       "date": "2026-08-25",
       "value": 473106.71
+    },
+    {
+      "date": "2026-08-26",
+      "value": 474002.59
     }
   ]
 }
