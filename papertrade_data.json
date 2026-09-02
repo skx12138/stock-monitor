@@ -1,6 +1,6 @@
 {
-  "cash": 412466.5916499996,
-  "total_value": 474002.59,
+  "cash": 49097.23595999959,
+  "total_value": 468559.24,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -17,50 +17,20 @@
       "add_count": 0,
       "hold_since": "2026-07-15"
     },
-    "600707": {
-      "stock_code": "600707",
-      "stock_name": "彩虹股份",
-      "buy_date": "2026-08-25",
-      "buy_price": 9.06,
-      "shares": 100,
-      "current_price": 9.16,
-      "total_cost": 906.3936753846153,
-      "market_value": 916.0,
-      "profit_pct": 1.1,
-      "profit_amount": 9.61,
-      "peak_price": 9.31,
+    "600522": {
+      "stock_code": "600522",
+      "stock_name": "中天科技",
+      "buy_date": "2026-09-02",
+      "buy_price": 34.02,
+      "shares": 11300,
+      "current_price": 33.64,
+      "total_cost": 384525.95076000004,
+      "market_value": 380132.0,
+      "profit_pct": -1.12,
+      "profit_amount": -4393.95,
+      "peak_price": 34.05,
       "add_count": 0,
-      "hold_since": "2026-08-25"
-    },
-    "002515": {
-      "stock_code": "002515",
-      "stock_name": "金字火腿",
-      "buy_date": "2026-08-26",
-      "buy_price": 7.88,
-      "shares": 2200,
-      "current_price": 7.82,
-      "total_cost": 17341.17336,
-      "market_value": 17204.0,
-      "profit_pct": -0.76,
-      "profit_amount": -137.17,
-      "peak_price": 7.95,
-      "add_count": 0,
-      "hold_since": "2026-08-26"
-    },
-    "002549": {
-      "stock_code": "002549",
-      "stock_name": "凯美特气",
-      "buy_date": "2026-08-26",
-      "buy_price": 13.75,
-      "shares": 300,
-      "current_price": 13.62,
-      "total_cost": 4130.04125,
-      "market_value": 4085.9999999999995,
-      "profit_pct": -0.95,
-      "profit_amount": -44.04,
-      "peak_price": 14.0,
-      "add_count": 0,
-      "hold_since": "2026-08-26"
+      "hold_since": "2026-09-02"
     }
   },
   "trades": [
@@ -1075,6 +1045,50 @@
       "reason": "评分44·新仓减半",
       "profit_pct": 1.29,
       "profit_amount": 11.67
+    },
+    {
+      "stock_code": "002515",
+      "stock_name": "金字火腿",
+      "action": "卖出",
+      "date": "2026-09-02",
+      "price": 7.31,
+      "shares": 2200,
+      "reason": "评分39·建议卖出",
+      "profit_pct": -7.38,
+      "profit_amount": -1280.42
+    },
+    {
+      "stock_code": "600522",
+      "stock_name": "中天科技",
+      "action": "加仓",
+      "date": "2026-09-02",
+      "price": 34.02,
+      "shares": 11300,
+      "reason": "评分66分买入1%仓位·看涨·大盘跌",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600707",
+      "stock_name": "彩虹股份",
+      "action": "卖出",
+      "date": "2026-09-02",
+      "price": 8.87,
+      "shares": 100,
+      "reason": "减仓降仓·评分51·仓位91%",
+      "profit_pct": -2.79,
+      "profit_amount": -25.29
+    },
+    {
+      "stock_code": "002549",
+      "stock_name": "凯美特气",
+      "action": "卖出",
+      "date": "2026-09-02",
+      "price": 14.08,
+      "shares": 300,
+      "reason": "减仓降仓·评分62·仓位91%",
+      "profit_pct": 2.05,
+      "profit_amount": 84.69
     }
   ],
   "daily_values": [
@@ -1165,6 +1179,10 @@
     {
       "date": "2026-08-26",
       "value": 474002.59
+    },
+    {
+      "date": "2026-09-02",
+      "value": 468559.24
     }
   ]
 }
