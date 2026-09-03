@@ -1,6 +1,6 @@
 {
-  "cash": 49097.23595999959,
-  "total_value": 468559.24,
+  "cash": 420285.9481399996,
+  "total_value": 459615.95,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -16,21 +16,6 @@
       "peak_price": 78.66,
       "add_count": 0,
       "hold_since": "2026-07-15"
-    },
-    "600522": {
-      "stock_code": "600522",
-      "stock_name": "中天科技",
-      "buy_date": "2026-09-02",
-      "buy_price": 34.02,
-      "shares": 11300,
-      "current_price": 33.64,
-      "total_cost": 384525.95076000004,
-      "market_value": 380132.0,
-      "profit_pct": -1.12,
-      "profit_amount": -4393.95,
-      "peak_price": 34.05,
-      "add_count": 0,
-      "hold_since": "2026-09-02"
     }
   },
   "trades": [
@@ -1089,6 +1074,17 @@
       "reason": "减仓降仓·评分62·仓位91%",
       "profit_pct": 2.05,
       "profit_amount": 84.69
+    },
+    {
+      "stock_code": "600522",
+      "stock_name": "中天科技",
+      "action": "卖出",
+      "date": "2026-09-03",
+      "price": 32.89,
+      "shares": 11300,
+      "reason": "减仓降仓·评分55·仓位90%",
+      "profit_pct": -3.47,
+      "profit_amount": -13337.24
     }
   ],
   "daily_values": [
@@ -1183,6 +1179,10 @@
     {
       "date": "2026-09-02",
       "value": 468559.24
+    },
+    {
+      "date": "2026-09-03",
+      "value": 459615.95
     }
   ]
 }
