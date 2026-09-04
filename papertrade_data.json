@@ -1,6 +1,6 @@
 {
-  "cash": 420285.9481399996,
-  "total_value": 459615.95,
+  "cash": 360426.3886999996,
+  "total_value": 459720.39,
   "positions": {
     "002156": {
       "stock_code": "002156",
@@ -16,6 +16,36 @@
       "peak_price": 78.66,
       "add_count": 0,
       "hold_since": "2026-07-15"
+    },
+    "002475": {
+      "stock_code": "002475",
+      "stock_name": "立讯精密",
+      "buy_date": "2026-09-04",
+      "buy_price": 54.24,
+      "shares": 600,
+      "current_price": 54.24,
+      "total_cost": 32552.46144,
+      "market_value": 32544.0,
+      "profit_pct": 0.0,
+      "profit_amount": 0.0,
+      "peak_price": 54.24,
+      "add_count": 0,
+      "hold_since": "2026-09-04"
+    },
+    "600183": {
+      "stock_code": "600183",
+      "stock_name": "生益科技",
+      "buy_date": "2026-09-04",
+      "buy_price": 136.5,
+      "shares": 200,
+      "current_price": 137.1,
+      "total_cost": 27307.098,
+      "market_value": 27420.0,
+      "profit_pct": 0.44,
+      "profit_amount": 112.9,
+      "peak_price": 137.1,
+      "add_count": 0,
+      "hold_since": "2026-09-04"
     }
   },
   "trades": [
@@ -1085,6 +1115,28 @@
       "reason": "减仓降仓·评分55·仓位90%",
       "profit_pct": -3.47,
       "profit_amount": -13337.24
+    },
+    {
+      "stock_code": "002475",
+      "stock_name": "立讯精密",
+      "action": "加仓",
+      "date": "2026-09-04",
+      "price": 54.24,
+      "shares": 600,
+      "reason": "尾盘买入·下周一震荡评分66",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
+    },
+    {
+      "stock_code": "600183",
+      "stock_name": "生益科技",
+      "action": "加仓",
+      "date": "2026-09-04",
+      "price": 136.5,
+      "shares": 200,
+      "reason": "尾盘买入·下周一震荡评分59",
+      "profit_pct": 0.0,
+      "profit_amount": 0.0
     }
   ],
   "daily_values": [
@@ -1183,6 +1235,10 @@
     {
       "date": "2026-09-03",
       "value": 459615.95
+    },
+    {
+      "date": "2026-09-04",
+      "value": 459720.39
     }
   ]
 }
